@@ -928,6 +928,36 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     );
   }
 
+  onTableWheel(event: WheelEvent): void {
+    const scrollRegion = event.currentTarget;
+
+    if (!(scrollRegion instanceof HTMLElement)) {
+      return;
+    }
+
+    const horizontalDelta =
+      Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.shiftKey
+          ? event.deltaY
+          : 0;
+
+    if (
+      horizontalDelta === 0 ||
+      scrollRegion.scrollWidth <= scrollRegion.clientWidth
+    ) {
+      return;
+    }
+
+    const previousScrollLeft = scrollRegion.scrollLeft;
+    scrollRegion.scrollLeft += horizontalDelta;
+
+    if (scrollRegion.scrollLeft !== previousScrollLeft) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
   retryAuditRecords(): void {
     if (!this.lastRecordsRequest) {
       return;

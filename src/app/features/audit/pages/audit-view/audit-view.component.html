@@ -580,6 +580,7 @@
           role="region"
           tabindex="0"
           aria-label="Audit records"
+          (wheel)="onTableWheel($event)"
         >
           <table class="records-table data-table">
             <thead>
@@ -760,6 +761,7 @@
                           class="history-table-wrap scroll-table-wrap"
                           role="region"
                           tabindex="0"
+                          (wheel)="onTableWheel($event)"
                           [attr.aria-label]="
                             'Audit history for record ' + row.id
                           "

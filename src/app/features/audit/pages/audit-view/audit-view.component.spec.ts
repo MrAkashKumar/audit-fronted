@@ -1082,6 +1082,10 @@ describe("AuditViewComponent", () => {
     element = fixture.nativeElement as HTMLElement;
     filterButton = element.querySelector<HTMLButtonElement>(".filter-button");
     expect(filterButton?.getAttribute("aria-expanded")).toBe("true");
+    expect(filterButton?.classList.contains("filter-button--active")).toBe(
+      true,
+    );
+    expect(filterButton?.textContent).toContain("Hide filters");
     expect(filterButton?.getAttribute("aria-controls")).toBe(
       "audit-record-filters",
     );
@@ -1269,6 +1273,50 @@ describe("AuditViewComponent", () => {
     expect(component.filteredRows.map((row) => row.id)).toEqual([2, 1, 3]);
     component.toggleSort("AMOUNT");
     expect(component.filteredRows.map((row) => row.id)).toEqual([1, 2, 3]);
+  });
+
+  it("keeps records and audit-history horizontal wheel scrolling independent", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    const recordsRegion = document.createElement("div");
+    const historyRegion = document.createElement("div");
+
+    for (const region of [recordsRegion, historyRegion]) {
+      Object.defineProperty(region, "clientWidth", { value: 300 });
+      Object.defineProperty(region, "scrollWidth", { value: 900 });
+      region.addEventListener("wheel", (event) =>
+        component.onTableWheel(event),
+      );
+    }
+
+    const recordsWheel = new WheelEvent("wheel", {
+      cancelable: true,
+      deltaX: 80,
+    });
+    recordsRegion.dispatchEvent(recordsWheel);
+
+    expect(recordsRegion.scrollLeft).toBe(80);
+    expect(historyRegion.scrollLeft).toBe(0);
+    expect(recordsWheel.defaultPrevented).toBe(true);
+
+    const historyWheel = new WheelEvent("wheel", {
+      cancelable: true,
+      deltaX: 45,
+    });
+    historyRegion.dispatchEvent(historyWheel);
+
+    expect(recordsRegion.scrollLeft).toBe(80);
+    expect(historyRegion.scrollLeft).toBe(45);
+    expect(historyWheel.defaultPrevented).toBe(true);
+
+    const verticalWheel = new WheelEvent("wheel", {
+      cancelable: true,
+      deltaY: 60,
+    });
+    historyRegion.dispatchEvent(verticalWheel);
+
+    expect(historyRegion.scrollLeft).toBe(45);
+    expect(verticalWheel.defaultPrevented).toBe(false);
   });
 
   it("renders 100 API rows, 40 dynamic columns, and 100 expanded revisions", async () => {
