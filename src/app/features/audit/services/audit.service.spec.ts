@@ -82,6 +82,23 @@ describe("AuditService", () => {
     expect(totalElements).toBe(75);
   });
 
+  it("encodes spaces, path separators, query characters, and Unicode labels", () => {
+    service.getAuditRecords("  Feature / 東京?  ", 0, 10).subscribe();
+
+    const request = httpTesting.expectOne(
+      "/api/v1/audit/Feature%20%2F%20%E6%9D%B1%E4%BA%AC%3F?pageNo=0&pageSize=10",
+    );
+    expect(request.request.method).toBe("GET");
+    request.flush({
+      ...recordsResponse,
+      data: {
+        ...recordsResponse.data,
+        pageNo: 0,
+        pageSize: 10,
+      },
+    });
+  });
+
   it("uses the default pagination values", () => {
     service.getAuditRecords("Position-Balance").subscribe();
 

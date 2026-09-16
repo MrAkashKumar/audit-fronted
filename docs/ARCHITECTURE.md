@@ -74,19 +74,24 @@ enabled from response metadata.
 
 ## Dynamic schema
 
-Main columns are the union of keys in non-null `originalData`. Only `ID` is omitted from the
-generated list because the record identifier already renders in the dedicated ID column. Fields
+Main columns are the per-feature union of keys discovered in `originalData` across loaded API
+pages, including fields whose value is currently null. Only `ID` is omitted from the generated
+list because the record identifier already renders in the dedicated ID column. Fields
 such as `CREATED_BY`, `CREATED_ON`, `UPDATED_BY`, `UPDATED_ON`, and `VERSION` remain fully dynamic
 and render whenever the selected API response supplies them.
 
 History columns are computed per record from its history entries. The fixed history semantics
 (`operation` and `revision`) render in dedicated columns, while transport/technical aliases such as
 `REV`, `REVTYPE`, and `revisionTypeCode` are omitted from the generated history list. A feature
-selection rebuilds both schemas, so new backend labels work without table-specific component code.
+selection starts a fresh schema union, so new backend labels work without table-specific component
+code while sparse fields remain available during pagination. A failed page request clears visible
+rows but preserves the same-feature schema union so an exact retry cannot discard fields learned
+from earlier pages.
 
-Column type inference stops after finding the first non-null value for a field. This avoids scanning
-and allocating values for every record while preserving the same dynamic text, number, boolean, and
-date behavior.
+Column type inference stops after finding the first non-null value for a field. A key seen only with
+null values is temporarily treated as text; the first later page containing a concrete value can
+upgrade it to text, number, boolean, or date. Once concrete evidence is recorded, later conflicting
+types do not silently replace it.
 
 ## Styling
 

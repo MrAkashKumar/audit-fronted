@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { Observable, of, throwError } from "rxjs";
+import { Observable, of, Subject, throwError } from "rxjs";
+import { vi } from "vitest";
 
 import { AuditTableLabelsApiResponse } from "../../models/audit-table-label.model";
 import {
@@ -99,12 +100,23 @@ describe("AuditViewComponent", () => {
   let recordRequests: AuditRecordRequest[];
   let labelsResponseOverride: Observable<AuditTableLabelsApiResponse> | null;
   let recordsResponseOverride: Observable<DynamicAuditApiResponse> | null;
+  let labelsResponseFactory:
+    (() => Observable<AuditTableLabelsApiResponse>) | null;
+  let recordsResponseFactory:
+    | ((
+        tableLabel: string,
+        pageNo: number,
+        pageSize: number,
+      ) => Observable<DynamicAuditApiResponse>)
+    | null;
 
   beforeEach(async () => {
     labelRequests = 0;
     recordRequests = [];
     labelsResponseOverride = null;
     recordsResponseOverride = null;
+    labelsResponseFactory = null;
+    recordsResponseFactory = null;
 
     await TestBed.configureTestingModule({
       imports: [AuditViewComponent],
@@ -115,7 +127,11 @@ describe("AuditViewComponent", () => {
           useValue: {
             getAuditTableLabels: () => {
               labelRequests += 1;
-              return labelsResponseOverride ?? of(labelsResponse);
+              return (
+                labelsResponseFactory?.() ??
+                labelsResponseOverride ??
+                of(labelsResponse)
+              );
             },
             getAuditRecords: (
               tableLabel: string,
@@ -124,6 +140,7 @@ describe("AuditViewComponent", () => {
             ) => {
               recordRequests.push({ tableLabel, pageNo, pageSize });
               return (
+                recordsResponseFactory?.(tableLabel, pageNo, pageSize) ??
                 recordsResponseOverride ??
                 of(createRecordsResponse(pageNo, pageSize))
               );
@@ -293,16 +310,16 @@ describe("AuditViewComponent", () => {
     ];
 
     for (const key of sortableKeys) {
-      expect(component.getSortIndicator(key)).toBe("↕");
+      expect(component.getAriaSort(key)).toBeNull();
 
       component.toggleSort(key);
       expect(component.sortKey).toBe(key);
       expect(component.sortDirection).toBe("asc");
-      expect(component.getSortIndicator(key)).toBe("↑");
+      expect(component.getAriaSort(key)).toBe("ascending");
 
       component.toggleSort(key);
       expect(component.sortDirection).toBe("desc");
-      expect(component.getSortIndicator(key)).toBe("↓");
+      expect(component.getAriaSort(key)).toBe("descending");
 
       component.toggleSort(key);
       expect(component.sortKey).toBe("");
@@ -328,10 +345,10 @@ describe("AuditViewComponent", () => {
     expect(
       component.getSortedAuditHistory(row).map((item) => item.revision),
     ).toEqual([9450, 9401]);
-    expect(component.getHistorySortIndicator("revision")).toBe("↓");
+    expect(component.getHistoryAriaSort("revision")).toBe("descending");
 
     component.toggleHistorySort("revision");
-    expect(component.getHistorySortIndicator("revision")).toBe("↕");
+    expect(component.getHistoryAriaSort("revision")).toBeNull();
 
     for (const key of [
       "operation",
@@ -454,6 +471,11 @@ describe("AuditViewComponent", () => {
       "Unable to load audit features.",
     );
     expect(component.areTableLabelsLoading).toBe(false);
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.empty-selection[role="alert"]')
+        ?.textContent?.trim(),
+    ).toContain("Unable to load audit features");
   });
 
   it("shows retryable record API failures and clears response data", async () => {
@@ -488,5 +510,817 @@ describe("AuditViewComponent", () => {
     expect(component.recordsResponse).toBeNull();
     expect(component.filterConditions).toEqual([]);
     expect(document.title).toBe("Audit features | Audit Frontend");
+  });
+
+  it("clears the previous feature schema while the next feature loads", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    expect(component.columns.length).toBeGreaterThan(0);
+
+    const pendingResponse = new Subject<DynamicAuditApiResponse>();
+    recordsResponseOverride = pendingResponse;
+    component.selectTable("Position-Balance");
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    expect(component.recordsResponse).toBeNull();
+    expect(component.rows).toEqual([]);
+    expect(component.columns).toEqual([]);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        ".filter-button",
+      )?.disabled,
+    ).toBe(true);
+
+    pendingResponse.next(createRecordsResponse());
+    pendingResponse.complete();
+    await fixture.whenStable();
+
+    expect(component.isRecordsLoading).toBe(false);
+    expect(component.rows).toHaveLength(1);
+  });
+
+  it("retries the exact failed page and page size", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Position-Balance");
+    recordsResponseOverride = throwError(() => new Error("page failed"));
+    component.goToPage(1);
+    await fixture.whenStable();
+
+    recordsResponseOverride = of(createRecordsResponse(1, 10));
+    component.retryAuditRecords();
+    await fixture.whenStable();
+
+    expect(recordRequests.at(-1)).toEqual({
+      tableLabel: "Position-Balance",
+      pageNo: 1,
+      pageSize: 10,
+    });
+    expect(component.currentPageNo).toBe(1);
+  });
+
+  it("distinguishes an empty API page from empty filtered results", async () => {
+    const emptyResponse = createRecordsResponse();
+    emptyResponse.data.rows = [];
+    emptyResponse.data.numberOfElements = 0;
+    emptyResponse.data.totalElements = 0;
+    emptyResponse.data.totalPages = 0;
+    emptyResponse.data.hasNext = false;
+    recordsResponseOverride = of(emptyResponse);
+
+    const fixture = await createFixture();
+    await selectTable(fixture, "Holiday-Calendar");
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector(".panel-state")?.textContent).toContain(
+      "No audit records available",
+    );
+    expect(element.querySelector(".panel-state")?.textContent).not.toContain(
+      "clear the filter",
+    );
+  });
+
+  it("shows current-page filter context alongside the server total", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    component.filterConditions = [
+      {
+        id: 1,
+        join: "AND",
+        fieldKey: "LOCOMOTIVE_CODE",
+        operator: "equals",
+        value: "missing",
+      },
+    ];
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector(".panel-state")?.textContent).toContain(
+      "No matching records",
+    );
+    expect(element.querySelector(".records-summary")?.textContent).toContain(
+      "0 shown on this page / 21 total",
+    );
+  });
+
+  it("clears hidden values and restricts comparison operators by field type", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    component.addFilterCondition();
+    const condition = component.filterConditions[0];
+    condition.fieldKey = "VERSION";
+    condition.value = "2";
+
+    expect(
+      component
+        .getFilterOperatorOptions(condition)
+        .map((operator) => operator.value),
+    ).toContain("greaterThan");
+    expect(
+      component
+        .getFilterOperatorOptions(condition)
+        .map((operator) => operator.value),
+    ).not.toContain("startsWith");
+
+    component.selectFilterOperator(condition, "isEmpty");
+    expect(condition.value).toBe("");
+
+    component.selectFilterField(condition, "FLEET_STATUS");
+    expect(
+      component
+        .getFilterOperatorOptions(condition)
+        .map((operator) => operator.value),
+    ).toContain("startsWith");
+    expect(
+      component
+        .getFilterOperatorOptions(condition)
+        .map((operator) => operator.value),
+    ).not.toContain("greaterThan");
+  });
+
+  it("retains a per-feature union of dynamic columns across pages", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    const secondPage = createRecordsResponse(1, 10);
+    secondPage.data.rows[0].originalData = {
+      ID: 2002,
+      PAGE_TWO_ONLY: "value",
+    };
+    recordsResponseOverride = of(secondPage);
+
+    component.goToPage(1);
+    await fixture.whenStable();
+
+    const keys = component.columns.map((column) => column.key);
+    expect(keys).toContain("LOCOMOTIVE_CODE");
+    expect(keys).toContain("PAGE_TWO_ONLY");
+  });
+
+  it("evaluates independent mixed AND/OR groups with AND precedence", async () => {
+    const mixedResponse = createRecordsResponse();
+    const secondRecord = structuredClone(mixedResponse.data.rows[0]);
+    secondRecord.id = 2002;
+    secondRecord.originalData = {
+      ID: 2002,
+      LOCOMOTIVE_NAME: "Harbour Runner",
+      FLEET_STATUS: "RETIRED",
+      DEPOT_CODE: "PSA",
+    };
+    mixedResponse.data.rows.push(secondRecord);
+    mixedResponse.data.numberOfElements = 2;
+    recordsResponseOverride = of(mixedResponse);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+
+    component.filterConditions = [
+      {
+        id: 1,
+        join: "AND",
+        fieldKey: "LOCOMOTIVE_NAME",
+        operator: "equals",
+        value: "Merlion One",
+      },
+      {
+        id: 2,
+        join: "OR",
+        fieldKey: "FLEET_STATUS",
+        operator: "equals",
+        value: "RETIRED",
+      },
+      {
+        id: 3,
+        join: "AND",
+        fieldKey: "DEPOT_CODE",
+        operator: "equals",
+        value: "PSA",
+      },
+    ];
+
+    expect(component.filteredRows.map((row) => row.id)).toEqual([2001, 2002]);
+    component.filterConditions[2].value = "TJS";
+    expect(component.filteredRows.map((row) => row.id)).toEqual([2001]);
+  });
+
+  it("uses neutral styling for unknown operations", async () => {
+    const unknownResponse = createRecordsResponse();
+    unknownResponse.data.rows[0].auditHistory[0].operation = "MERGE";
+    recordsResponseOverride = of(unknownResponse);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+    component.toggleRow(component.rows[0].id);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    expect(component.getOperationTone("MERGE")).toBe("unknown");
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector(".operation-badge--unknown")
+        ?.textContent?.trim(),
+    ).toBe("MERGE");
+  });
+
+  it("keeps listbox options out of the Tab sequence and shows the selection", async () => {
+    const fixture = await createFixture();
+    const element = fixture.nativeElement as HTMLElement;
+    const search = element.querySelector<HTMLInputElement>(
+      "#audit-view-table-search",
+    );
+
+    search?.focus();
+    fixture.detectChanges();
+    expect(
+      Array.from(
+        element.querySelectorAll<HTMLButtonElement>(".table-option"),
+      ).every((option) => option.tabIndex === -1),
+    ).toBe(true);
+
+    await selectTable(fixture, "Position-Balance");
+    expect(
+      element.querySelector(".selected-feature-name")?.textContent,
+    ).toContain("Position Balance");
+  });
+
+  it("scrolls a keyboard-active feature option into the visible listbox area", async () => {
+    labelsResponseOverride = of({
+      ...labelsResponse,
+      data: {
+        tableLabels: Array.from(
+          { length: 51 },
+          (_, index) => `Audit-Feature-${index + 1}`,
+        ),
+      },
+    });
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    try {
+      const fixture = await createFixture();
+      const component = fixture.componentInstance;
+      component.onTableSearchFocus();
+      fixture.changeDetectorRef.markForCheck();
+      await fixture.whenStable();
+
+      component.onTableSearchKeydown(
+        new KeyboardEvent("keydown", { key: "ArrowDown" }),
+      );
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+    } finally {
+      if (originalScrollIntoView) {
+        Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+          configurable: true,
+          value: originalScrollIntoView,
+        });
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+      }
+    }
+  });
+
+  it("upgrades a provisional null-only column type when later API data provides evidence", async () => {
+    const firstPage = createRecordsResponse(0, 10);
+    firstPage.data.rows[0].originalData = {
+      ID: 2001,
+      AMOUNT: null,
+      SETTLEMENT_ON: null,
+    };
+    recordsResponseOverride = of(firstPage);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Position-Balance");
+
+    expect(
+      component.columns.find((column) => column.key === "AMOUNT")?.dataType,
+    ).toBe("text");
+
+    const secondPage = createRecordsResponse(1, 10);
+    secondPage.data.rows[0].originalData = {
+      ID: 2002,
+      AMOUNT: 25,
+      SETTLEMENT_ON: "2026-09-16T08:00:00Z",
+    };
+    recordsResponseOverride = of(secondPage);
+    component.goToPage(1);
+    await fixture.whenStable();
+
+    expect(
+      component.columns.find((column) => column.key === "AMOUNT")?.dataType,
+    ).toBe("number");
+    expect(
+      component.columns.find((column) => column.key === "SETTLEMENT_ON")
+        ?.dataType,
+    ).toBe("date");
+
+    const amountCondition: AuditFilterCondition = {
+      id: 99,
+      join: "AND",
+      fieldKey: "AMOUNT",
+      operator: "contains",
+      value: "",
+    };
+    expect(
+      component
+        .getFilterOperatorOptions(amountCondition)
+        .map((option) => option.value),
+    ).toContain("greaterThan");
+  });
+
+  it("preserves the discovered schema across a failed page request and retry", async () => {
+    const firstPage = createRecordsResponse(0, 10);
+    firstPage.data.rows[0].originalData = {
+      ID: 2001,
+      PAGE_ZERO_ONLY: "first",
+    };
+    recordsResponseOverride = of(firstPage);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Position-Balance");
+
+    recordsResponseOverride = throwError(() => new Error("page failed"));
+    component.goToPage(1);
+    await fixture.whenStable();
+
+    expect(component.columns.map((column) => column.key)).toContain(
+      "PAGE_ZERO_ONLY",
+    );
+
+    const secondPage = createRecordsResponse(1, 10);
+    secondPage.data.rows[0].originalData = {
+      ID: 2002,
+      PAGE_ONE_ONLY: "second",
+    };
+    recordsResponseOverride = of(secondPage);
+    component.retryAuditRecords();
+    await fixture.whenStable();
+
+    expect(component.columns.map((column) => column.key)).toEqual([
+      "PAGE_ZERO_ONLY",
+      "PAGE_ONE_ONLY",
+    ]);
+  });
+
+  it("restores feature-search focus and reveals the selected option after Clear", async () => {
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    try {
+      const fixture = await createFixture();
+      const component = fixture.componentInstance;
+      const element = fixture.nativeElement as HTMLElement;
+      component.selectedTableLabel = "Position-Balance";
+
+      const search = element.querySelector<HTMLInputElement>(
+        "#audit-view-table-search",
+      );
+      if (!search) {
+        throw new Error("Feature search input was not rendered.");
+      }
+
+      search.value = "Holiday";
+      search.dispatchEvent(new Event("input"));
+      fixture.detectChanges();
+
+      const clearButton = element.querySelector<HTMLButtonElement>(
+        ".clear-table-search",
+      );
+      clearButton?.focus();
+      clearButton?.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(document.activeElement).toBe(search);
+      expect(component.activeTableOptionIndex).toBe(2);
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+    } finally {
+      if (originalScrollIntoView) {
+        Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+          configurable: true,
+          value: originalScrollIntoView,
+        });
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+      }
+    }
+  });
+
+  it("shows distinct loading and API-empty feature states", async () => {
+    const pendingLabels = new Subject<AuditTableLabelsApiResponse>();
+    labelsResponseOverride = pendingLabels;
+    const fixture = TestBed.createComponent(AuditViewComponent);
+    fixture.detectChanges();
+
+    let element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector(".empty-selection")?.textContent).toContain(
+      "Loading audit features",
+    );
+    expect(element.querySelector(".table-count")?.textContent).toContain(
+      "Loading",
+    );
+
+    pendingLabels.next({
+      ...labelsResponse,
+      data: { tableLabels: [] },
+    });
+    pendingLabels.complete();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector(".empty-selection")?.textContent).toContain(
+      "No audit features available",
+    );
+    expect(element.querySelector(".table-count")?.textContent).toContain(
+      "0 features",
+    );
+
+    const search = element.querySelector<HTMLInputElement>(
+      "#audit-view-table-search",
+    );
+    search?.focus();
+    fixture.detectChanges();
+    expect(element.querySelector(".picker-state")?.textContent).toContain(
+      "No audit features available",
+    );
+
+    if (search) {
+      search.value = "anything";
+      search.dispatchEvent(new Event("input"));
+      fixture.detectChanges();
+    }
+    expect(element.querySelector(".picker-state")?.textContent).toContain(
+      "No audit features available",
+    );
+  });
+
+  it("keeps focus inside the rule editor after removing its only condition", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+    component.toggleRecordFilters();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const originalConditionId = component.filterConditions[0].id;
+    const removeButton = (
+      fixture.nativeElement as HTMLElement
+    ).querySelector<HTMLButtonElement>(".remove-condition");
+    removeButton?.focus();
+    removeButton?.click();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    const replacementCondition = component.filterConditions[0];
+    expect(replacementCondition.id).not.toBe(originalConditionId);
+    expect(document.activeElement?.id).toBe(
+      `filter-field-trigger-${replacementCondition.id}`,
+    );
+  });
+
+  it("supports Home, End, and type-ahead in field and operator listboxes", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+    component.toggleRecordFilters();
+    const condition = component.filterConditions[0];
+    const trigger = document.createElement("button");
+
+    component.toggleFilterFieldMenu(condition);
+    component.onFilterFieldKeydown(
+      condition,
+      new KeyboardEvent("keydown", { key: "End" }),
+      trigger,
+    );
+    expect(component.activeFieldOptionIndex).toBe(
+      component.filterFieldOptions.length - 1,
+    );
+
+    component.onFilterFieldKeydown(
+      condition,
+      new KeyboardEvent("keydown", { key: "Home" }),
+      trigger,
+    );
+    expect(component.activeFieldOptionIndex).toBe(0);
+
+    component.onFilterFieldKeydown(
+      condition,
+      new KeyboardEvent("keydown", { key: "v" }),
+      trigger,
+    );
+    component.onFilterFieldKeydown(
+      condition,
+      new KeyboardEvent("keydown", { key: "e" }),
+      trigger,
+    );
+    expect(
+      component.filterFieldOptions[component.activeFieldOptionIndex].label,
+    ).toBe("Version");
+
+    component.selectFilterField(condition, "VERSION", trigger);
+    component.toggleFilterOperatorMenu(condition);
+    component.onFilterOperatorKeydown(
+      condition,
+      new KeyboardEvent("keydown", { key: "g" }),
+      trigger,
+    );
+    expect(
+      component.getFilterOperatorOptions(condition)[
+        component.activeOperatorOptionIndex
+      ].label,
+    ).toBe("Greater than");
+  });
+
+  it("exposes filter disclosure state, live empty results, and long cell values", async () => {
+    const response = createRecordsResponse();
+    const longValue = "A very long audit value that needs keyboard expansion";
+    response.data.rows[0].originalData = {
+      ID: 2001,
+      LONG_DESCRIPTION: longValue,
+    };
+    recordsResponseOverride = of(response);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+    let element = fixture.nativeElement as HTMLElement;
+    let filterButton =
+      element.querySelector<HTMLButtonElement>(".filter-button");
+    expect(filterButton?.getAttribute("aria-expanded")).toBe("false");
+    expect(element.querySelector("#audit-record-filters")).toBeNull();
+
+    component.toggleRecordFilters();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    element = fixture.nativeElement as HTMLElement;
+    filterButton = element.querySelector<HTMLButtonElement>(".filter-button");
+    expect(filterButton?.getAttribute("aria-expanded")).toBe("true");
+    expect(filterButton?.getAttribute("aria-controls")).toBe(
+      "audit-record-filters",
+    );
+    expect(element.querySelector("#audit-record-filters")).not.toBeNull();
+
+    const expandableValue = element.querySelector<HTMLElement>(
+      ".cell-value--expandable",
+    );
+    expect(expandableValue?.tabIndex).toBe(0);
+    expect(expandableValue?.getAttribute("aria-label")).toBe(
+      `Long Description: ${longValue}`,
+    );
+    expandableValue?.click();
+    expect(component.expandedRowIds.size).toBe(0);
+
+    component.filterConditions = [
+      {
+        id: 1,
+        join: "AND",
+        fieldKey: "LONG_DESCRIPTION",
+        operator: "equals",
+        value: "missing",
+      },
+    ];
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    expect(element.querySelector('.panel-state[role="status"]')).not.toBeNull();
+  });
+
+  it("cancels a replaced record request so a late response cannot overwrite the selected feature", async () => {
+    const firstRequest = new Subject<DynamicAuditApiResponse>();
+    const secondRequest = new Subject<DynamicAuditApiResponse>();
+    recordsResponseFactory = (tableLabel) =>
+      tableLabel === "First-Feature" ? firstRequest : secondRequest;
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    component.selectTable("First-Feature");
+    component.selectTable("Second-Feature");
+
+    const lateFirstResponse = createRecordsResponse();
+    lateFirstResponse.data.rows[0].id = 1001;
+    firstRequest.next(lateFirstResponse);
+    firstRequest.complete();
+
+    const activeSecondResponse = createRecordsResponse();
+    activeSecondResponse.data.rows[0].id = 2002;
+    secondRequest.next(activeSecondResponse);
+    secondRequest.complete();
+    await fixture.whenStable();
+
+    expect(component.selectedTableLabel).toBe("Second-Feature");
+    expect(component.rows.map((row) => row.id)).toEqual([2002]);
+  });
+
+  it("cancels a replaced label request during Refresh", async () => {
+    const firstRequest = new Subject<AuditTableLabelsApiResponse>();
+    const secondRequest = new Subject<AuditTableLabelsApiResponse>();
+    let factoryCall = 0;
+    labelsResponseFactory = () => {
+      factoryCall += 1;
+      return factoryCall === 1 ? firstRequest : secondRequest;
+    };
+
+    const fixture = TestBed.createComponent(AuditViewComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.refresh();
+
+    firstRequest.next({
+      ...labelsResponse,
+      data: { tableLabels: ["Stale-Feature"] },
+    });
+    firstRequest.complete();
+    secondRequest.next({
+      ...labelsResponse,
+      data: { tableLabels: ["Current-Feature"] },
+    });
+    secondRequest.complete();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.tableLabels).toEqual(["Current-Feature"]);
+  });
+
+  it("applies text, numeric, date, boolean, and empty filter operators", async () => {
+    const response = createRecordsResponse();
+    const baseRecord = response.data.rows[0];
+    response.data.rows = [
+      {
+        ...structuredClone(baseRecord),
+        id: 1,
+        originalData: {
+          ID: 1,
+          NAME: "Alpha",
+          AMOUNT: 10,
+          ACTIVE: true,
+          EVENT_DATE: "2026-01-01",
+        },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 2,
+        originalData: {
+          ID: 2,
+          NAME: "Beta",
+          AMOUNT: 20,
+          ACTIVE: false,
+          EVENT_DATE: "2026-02-01",
+        },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 3,
+        originalData: {
+          ID: 3,
+          NAME: null,
+          AMOUNT: null,
+          ACTIVE: null,
+          EVENT_DATE: null,
+        },
+      },
+    ];
+    response.data.numberOfElements = 3;
+    response.data.totalElements = 3;
+    response.data.totalPages = 1;
+    recordsResponseOverride = of(response);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Dynamic-Feature");
+
+    const expectMatches = (
+      fieldKey: string,
+      operator: AuditFilterCondition["operator"],
+      value: string,
+      expectedIds: number[],
+    ) => {
+      component.filterConditions = [
+        { id: 1, join: "AND", fieldKey, operator, value },
+      ];
+      expect(component.filteredRows.map((row) => row.id)).toEqual(expectedIds);
+    };
+
+    expectMatches("NAME", "contains", "a", [1, 2]);
+    expectMatches("NAME", "startsWith", "be", [2]);
+    expectMatches("AMOUNT", "equals", "20", [2]);
+    expectMatches("NAME", "notEquals", "Alpha", [2]);
+    expectMatches("AMOUNT", "greaterThan", "10", [2]);
+    expectMatches("EVENT_DATE", "lessThan", "2026-02-01", [1]);
+    expectMatches("ACTIVE", "equals", "true", [1]);
+    expectMatches("NAME", "isEmpty", "", [3]);
+    expectMatches("ACTIVE", "isNotEmpty", "", [1, 2]);
+  });
+
+  it("sorts dynamic main values and keeps null values last", async () => {
+    const response = createRecordsResponse();
+    const baseRecord = response.data.rows[0];
+    response.data.rows = [
+      {
+        ...structuredClone(baseRecord),
+        id: 3,
+        originalData: { ID: 3, AMOUNT: null },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 1,
+        originalData: { ID: 1, AMOUNT: 20 },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 2,
+        originalData: { ID: 2, AMOUNT: 10 },
+      },
+    ];
+    response.data.numberOfElements = 3;
+    response.data.totalElements = 3;
+    response.data.totalPages = 1;
+    recordsResponseOverride = of(response);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Dynamic-Feature");
+
+    component.toggleSort("AMOUNT");
+    expect(component.filteredRows.map((row) => row.id)).toEqual([2, 1, 3]);
+    component.toggleSort("AMOUNT");
+    expect(component.filteredRows.map((row) => row.id)).toEqual([1, 2, 3]);
+  });
+
+  it("renders 100 API rows, 40 dynamic columns, and 100 expanded revisions", async () => {
+    const response = createRecordsResponse(0, 100);
+    const baseRecord = response.data.rows[0];
+    const values = Object.fromEntries(
+      Array.from({ length: 40 }, (_, index) => [
+        `FIELD_${index + 1}`,
+        `value-${index + 1}`,
+      ]),
+    );
+    const longHistory = Array.from({ length: 100 }, (_, index) => ({
+      sequenceNumber: index + 1,
+      revision: 10_000 + index,
+      revisionTypeCode: index === 0 ? 0 : 1,
+      operation: index === 0 ? "INSERT" : "UPDATE",
+      ...values,
+    }));
+    response.data.rows = Array.from({ length: 100 }, (_, index) => ({
+      ...structuredClone(baseRecord),
+      id: index + 1,
+      originalData: { ID: index + 1, ...values },
+      changeSummary: {
+        ...baseRecord.changeSummary,
+        totalRevisions: index === 0 ? 100 : 2,
+      },
+      auditHistory:
+        index === 0 ? longHistory : structuredClone(baseRecord.auditHistory),
+    }));
+    response.data.numberOfElements = 100;
+    response.data.totalElements = 100;
+    response.data.totalPages = 1;
+    response.data.hasNext = false;
+    recordsResponseOverride = of(response);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Wide-Feature");
+    component.toggleRow(1);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(component.columns).toHaveLength(40);
+    expect(element.querySelectorAll(".record-row")).toHaveLength(100);
+    expect(element.querySelectorAll(".history-table tbody tr")).toHaveLength(
+      100,
+    );
+    expect(element.querySelectorAll('.cell-value[tabindex="0"]')).toHaveLength(
+      0,
+    );
+    expect(element.querySelector(".records-table-wrap")).not.toBeNull();
+    expect(element.querySelector(".history-table-wrap")).not.toBeNull();
   });
 });

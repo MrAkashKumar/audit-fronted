@@ -170,5 +170,5 @@ These are recommendations, not prerequisites for running the feature:
 - npm audit reported zero known vulnerabilities on 2026-09-15.
 - The application compiles.
 - Strict unused-local and unused-parameter TypeScript checks pass for application and test code.
-- All 22 tests pass.
+- All 45 tests pass.
 - Production build completes without warnings.

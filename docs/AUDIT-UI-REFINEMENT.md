@@ -20,6 +20,8 @@ and pagination continue to come from the two audit APIs.
 - Keeps the feature count visible on larger screens and removes it on narrow mobile screens.
 - Limits the option panel height and scrolls the list when the API returns many labels.
 - A short label list uses only the height needed by its available rows.
+- Loading, API-empty, search-empty, and failure states use distinct messages; clearing search
+  returns keyboard focus to the search input and reveals the selected option.
 
 ### Filter controls
 
@@ -35,6 +37,7 @@ Field, Condition, and Value now use the same anatomy:
 
 - All controls share the same height, border radius, background, typography, and focus treatment.
 - Field and Condition retain their controlled, keyboard-accessible listboxes.
+- Their listboxes support Arrow keys, Home, End, Enter, Space, Escape, and label type-ahead.
 - Value displays `Enter text, number, or date` until a value is entered.
 - Boolean fields keep a select control with the same visual dimensions.
 - Empty/not-empty operators display `No value required` in the same Value position.
@@ -71,6 +74,10 @@ The main records table and nested history table use the same width strategy:
 - Main-record and audit-history overflow remain available as needed. Their slim, component-local
   warm-gray scrollbars appear on pointer hover or keyboard focus and do not reserve empty space at
   rest. Touch users can move the same regions with the native horizontal swipe gesture.
+- The records viewport and nested history viewport have responsive maximum heights with sticky
+  headers, so horizontal controls remain reachable without first traversing 100 rows.
+- Hovering or focusing the nested history activates only its scrollbar; the outer records scrollbar
+  stays inactive until the pointer/focus returns to the records region.
 - The expanded-history tree keeps a compact indentation, and the final dynamic history column has
   explicit end padding so its content and the table boundary remain clear when fully scrolled.
 
@@ -92,6 +99,10 @@ The main records table and nested history table use the same width strategy:
 - Table and history scroll regions preserve full data instead of hiding dynamic columns.
 - Every main and audit-history data header shows a neutral sortable indicator and exposes its active
   ascending or descending state.
+- Potentially truncatable text values can receive keyboard/touch focus and reveal their complete
+  value without activating the parent history row.
+- Empty filter results are announced politely, filter disclosure exposes its expanded state, and
+  spinner motion is removed when the operating system requests reduced motion.
 
 ## Maintenance boundary
 
@@ -101,20 +112,20 @@ All new visual behavior is located in:
 src/app/features/audit/pages/audit-view/audit-view.component.css
 ```
 
-`src/styles.css` is intentionally unchanged. The filter operator options are exposed as one readonly
-collection and consumed directly by the template, removing a pass-through getter.
+`src/styles.css` is intentionally unchanged. Filter operators have one readonly source collection;
+the component exposes a type-aware subset to the template without duplicating operator metadata.
 
 ## Verification checklist
 
-- [ ] Search options remain usable with one, three, and many API feature labels.
-- [ ] A short schema fills the records panel.
-- [ ] A wide schema exposes the records scrollbar.
-- [ ] Expanded audit history exposes its independent scrollbar.
-- [ ] The history scrollbar is hidden at rest, appears on hover/focus, and is absent when no overflow exists.
-- [ ] Operation, Revision, and each dynamic history column sort independently.
-- [ ] Field, Condition, and Value labels remain aligned.
-- [ ] Field and Condition menus work with pointer and keyboard input.
-- [ ] Every added rule can select its own AND or OR join.
-- [ ] Tablet and mobile layouts do not overlap.
-- [ ] Refresh returns to the choose-feature state.
-- [ ] `src/styles.css` remains unchanged.
+- [x] Search options remain usable with one, three, and many API feature labels.
+- [x] A short schema fills the records panel.
+- [x] A wide schema exposes the records scrollbar.
+- [x] Expanded audit history exposes its independent scrollbar.
+- [x] The history scrollbar is hidden at rest, appears on hover/focus, and is absent when no overflow exists.
+- [x] Operation, Revision, and each dynamic history column sort independently.
+- [x] Field, Condition, and Value labels remain aligned.
+- [x] Field and Condition menus work with pointer and keyboard input.
+- [x] Every added rule can select its own AND or OR join.
+- [x] Tablet and mobile layouts do not overlap.
+- [x] Refresh returns to the choose-feature state.
+- [x] `src/styles.css` remains unchanged.

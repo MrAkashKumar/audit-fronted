@@ -107,9 +107,11 @@ Requirements:
 - AND groups are evaluated before OR groups.
 - Field, operator, and value controls remain aligned.
 - Condition and Value stay enabled before field selection; incomplete rules do not filter rows.
-- Changing Field preserves the current Condition and Value.
+- Changing to a different Field clears Value and restores Condition to `Contains`; re-selecting
+  the current Field preserves its Condition and Value.
 - Field and Condition use matching dark controlled listboxes with a highlighted selected row, checkmark, and gold open-state focus treatment so their appearance is consistent across operating systems.
-- Both lists support Arrow Up/Down, Enter, Space, and Escape keyboard interaction.
+- Both lists support Arrow Up/Down, Home, End, type-ahead, Enter, Space, and Escape keyboard
+  interaction.
 - Value keeps the same compact control height and receives the shared gold focus treatment without opening an operating-system popup.
 - The Field list contains only ID and displayed originalData fields.
 - Empty/not-empty operators replace the value input with “No value required.”
@@ -183,9 +185,11 @@ Requirements:
 - Null is rendered explicitly as italic “null.”
 - Operation, Revision, and every dynamic history column cycle through ascending, descending, and
   unsorted states without changing the API response order.
-- History is width-contained inside its parent record. Its slim horizontal scrollbar is revealed on
-  hover or keyboard focus only when the dynamic history schema overflows; touch devices retain a
-  muted visible thumb.
+- History is width-contained inside its parent record and bounded vertically. Its sticky header and
+  slim scrollbar keep both axes reachable near the expanded record; the scrollbar is revealed on
+  hover or keyboard focus only when the dynamic schema overflows.
+- The main records region is also bounded with a sticky header. Pointer/focus interaction inside
+  history activates the history scroller without activating the outer records scroller.
 - The history scroll region is keyboard-focusable and receives a visible focus treatment.
 
 ## Interaction state model
@@ -297,6 +301,9 @@ The implementation details and viewport verification matrix are documented in
 | -------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Empty heading        | Choose an audit feature                                                                                        |
 | Empty support        | Search by feature name above. Records load only after you select a feature.                                    |
+| Loading features     | Loading audit features                                                                                         |
+| No API features      | No audit features available                                                                                    |
+| No search matches    | No features match “{query}”.                                                                                   |
 | Search placeholder   | Search by feature name...                                                                                      |
 | Closed filter action | Filter records                                                                                                 |
 | Open filter action   | Hide filters                                                                                                   |

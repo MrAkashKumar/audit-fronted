@@ -23,6 +23,7 @@
             </svg>
           </span>
           <input
+            #tableSearchInput
             id="audit-view-table-search"
             type="search"
             role="combobox"
@@ -47,9 +48,13 @@
               ×
             </button>
           }
-          <span class="table-count">
-            {{ tableLabels.length }}
-            {{ tableLabels.length === 1 ? "feature" : "features" }}
+          <span class="table-count" aria-live="polite">
+            @if (areTableLabelsLoading) {
+              Loading…
+            } @else {
+              {{ tableLabels.length }}
+              {{ tableLabels.length === 1 ? "feature" : "features" }}
+            }
           </span>
         </div>
 
@@ -65,6 +70,8 @@
               <div class="picker-state picker-state--error">
                 {{ tableLabelsErrorMessage }}
               </div>
+            } @else if (tableLabels.length === 0) {
+              <div class="picker-state">No audit features available.</div>
             } @else if (filteredTableLabels.length === 0) {
               <div class="picker-state">
                 No features match “{{ tableSearchQuery }}”.
@@ -80,6 +87,7 @@
                   type="button"
                   class="table-option"
                   role="option"
+                  tabindex="-1"
                   [attr.aria-selected]="selectedTableLabel === tableLabel"
                   [class.table-option--selected]="
                     selectedTableLabel === tableLabel
@@ -114,14 +122,29 @@
         [disabled]="areTableLabelsLoading || isRecordsLoading"
         (click)="refresh()"
       >
-        <span aria-hidden="true">↻</span>
+        <svg
+          class="action-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+          <path d="M20 4v7h-7"></path>
+        </svg>
         Refresh
       </button>
     </div>
   </section>
 
   @if (!selectedTableLabel) {
-    <section class="empty-selection" aria-live="polite">
+    <section
+      class="empty-selection"
+      aria-live="polite"
+      aria-atomic="true"
+      [attr.role]="tableLabelsErrorMessage ? 'alert' : 'status'"
+    >
       <div class="empty-selection-icon" aria-hidden="true">
         <svg
           viewBox="0 0 24 24"
@@ -133,29 +156,64 @@
           <path d="m19 19-3.7-3.7"></path>
         </svg>
       </div>
-      <h1>Choose an audit feature</h1>
-      <p>
-        Search by feature name above. Records load only after you select a
-        feature.
-      </p>
+      @if (areTableLabelsLoading) {
+        <h1>Loading audit features</h1>
+        <p>Please wait while the available features are retrieved.</p>
+      } @else if (tableLabelsErrorMessage) {
+        <h1>Unable to load audit features</h1>
+        <p>Use Refresh to try loading the available features again.</p>
+      } @else if (tableLabels.length === 0) {
+        <h1>No audit features available</h1>
+        <p>
+          The service returned no audit features. Use Refresh to check again.
+        </p>
+      } @else {
+        <h1>Choose an audit feature</h1>
+        <p>
+          Search by feature name above. Records load only after you select a
+          feature.
+        </p>
+      }
     </section>
   } @else {
     <section class="records-panel" aria-labelledby="records-title">
       <header class="records-toolbar">
-        <h1 id="records-title">
-          <strong>{{ totalRecordCount }}</strong>
-          <span>{{ totalRecordLabel }}</span>
-        </h1>
+        <div class="records-heading">
+          <p class="selected-feature-name">
+            {{ getTableDisplayName(selectedTableLabel) }}
+          </p>
+          <h1 id="records-title">
+            @if (isRecordsLoading) {
+              <strong aria-hidden="true">…</strong>
+              <span>Loading records</span>
+            } @else {
+              <strong>{{ totalRecordCount }}</strong>
+              <span>{{ totalRecordLabel }}</span>
+            }
+          </h1>
+        </div>
 
         <button
           type="button"
           class="filter-button"
+          [disabled]="isRecordsLoading || !recordsResponse"
           [class.filter-button--active]="
             isRecordFilterOpen || activeFilterCount > 0
           "
+          [attr.aria-expanded]="isRecordFilterOpen"
+          aria-controls="audit-record-filters"
           (click)="toggleRecordFilters()"
         >
-          <span aria-hidden="true">☷</span>
+          <svg
+            class="action-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M5 7h14M8 12h8M10 17h4"></path>
+          </svg>
           {{ isRecordFilterOpen ? "Hide filters" : "Filter records" }}
           @if (!isRecordFilterOpen && activeFilterCount > 0) {
             <small>{{ activeFilterCount }}</small>
@@ -164,7 +222,11 @@
       </header>
 
       @if (isRecordFilterOpen) {
-        <section class="filter-builder" aria-labelledby="filter-builder-title">
+        <section
+          id="audit-record-filters"
+          class="filter-builder"
+          aria-labelledby="filter-builder-title"
+        >
           <div class="filter-builder-header">
             <div>
               <h2 id="filter-builder-title">Filter records</h2>
@@ -248,6 +310,7 @@
                   <span class="control-label">Field</span>
                   <button
                     #fieldTrigger
+                    [id]="'filter-field-trigger-' + condition.id"
                     type="button"
                     class="select-trigger field-trigger"
                     role="combobox"
@@ -388,7 +451,7 @@
                       "
                     >
                       @for (
-                        operator of filterOperatorOptions;
+                        operator of getFilterOperatorOptions(condition);
                         track operator.value;
                         let operatorIndex = $index
                       ) {
@@ -494,12 +557,22 @@
       } @else if (recordsErrorMessage) {
         <div class="panel-state panel-state--error" role="alert">
           <strong>{{ recordsErrorMessage }}</strong>
-          <button type="button" (click)="loadAuditRecords()">Retry</button>
+          <button type="button" (click)="retryAuditRecords()">Retry</button>
         </div>
       } @else if (filteredRows.length === 0) {
-        <div class="panel-state">
-          <strong>No matching records</strong>
-          <p>Change or clear the filter conditions to see more results.</p>
+        <div
+          class="panel-state"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          @if (activeFilterCount > 0) {
+            <strong>No matching records</strong>
+            <p>Change or clear the filter conditions to see more results.</p>
+          } @else {
+            <strong>No audit records available</strong>
+            <p>This feature did not return records for the current page.</p>
+          }
         </div>
       } @else {
         <div
@@ -520,7 +593,10 @@
                   >
                     ID
                     <span class="sort-indicator" aria-hidden="true">
-                      {{ getSortIndicator("ID") }}
+                      <svg viewBox="0 0 12 16">
+                        <path class="sort-up" d="m6 1 4 5H2z"></path>
+                        <path class="sort-down" d="m6 15-4-5h8z"></path>
+                      </svg>
                     </span>
                   </button>
                 </th>
@@ -533,7 +609,10 @@
                     >
                       {{ column.label }}
                       <span class="sort-indicator" aria-hidden="true">
-                        {{ getSortIndicator(column.key) }}
+                        <svg viewBox="0 0 12 16">
+                          <path class="sort-up" d="m6 1 4 5H2z"></path>
+                          <path class="sort-down" d="m6 15-4-5h8z"></path>
+                        </svg>
                       </span>
                     </button>
                   </th>
@@ -546,7 +625,10 @@
                   >
                     Revisions
                     <span class="sort-indicator" aria-hidden="true">
-                      {{ getSortIndicator("__REVISIONS__") }}
+                      <svg viewBox="0 0 12 16">
+                        <path class="sort-up" d="m6 1 4 5H2z"></path>
+                        <path class="sort-down" d="m6 15-4-5h8z"></path>
+                      </svg>
                     </span>
                   </button>
                 </th>
@@ -561,7 +643,10 @@
                   >
                     Record state
                     <span class="sort-indicator" aria-hidden="true">
-                      {{ getSortIndicator("__RECORD_STATE__") }}
+                      <svg viewBox="0 0 12 16">
+                        <path class="sort-up" d="m6 1 4 5H2z"></path>
+                        <path class="sort-down" d="m6 15-4-5h8z"></path>
+                      </svg>
                     </span>
                   </button>
                 </th>
@@ -588,9 +673,16 @@
                         "
                         (click)="$event.stopPropagation(); toggleRow(row.id)"
                       >
-                        <span [class.chevron--open]="isRowExpanded(row.id)"
-                          >⌄</span
+                        <svg
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          aria-hidden="true"
+                          [class.chevron--open]="isRowExpanded(row.id)"
                         >
+                          <path d="m5 7.5 5 5 5-5"></path>
+                        </svg>
                       </button>
                     }
                   </td>
@@ -599,6 +691,10 @@
                     @let cellValue = getCellValue(row, column);
                     <td>
                       <span
+                        class="cell-value"
+                        [class.cell-value--expandable]="
+                          isExpandableCellValue(cellValue)
+                        "
                         [class.code-value]="
                           isCodeColumn(column.key) && cellValue !== null
                         "
@@ -606,6 +702,21 @@
                           isStatusColumn(column.key) && cellValue !== null
                         "
                         [class.empty-value]="cellValue === null"
+                        [attr.title]="
+                          cellValue === null ? null : formatCellValue(cellValue)
+                        "
+                        [attr.tabindex]="
+                          isExpandableCellValue(cellValue) ? 0 : null
+                        "
+                        [attr.aria-label]="
+                          isExpandableCellValue(cellValue)
+                            ? column.label + ': ' + formatCellValue(cellValue)
+                            : null
+                        "
+                        (click)="
+                          isExpandableCellValue(cellValue) &&
+                            $event.stopPropagation()
+                        "
                       >
                         {{ formatCellValue(cellValue) }}
                       </span>
@@ -672,7 +783,16 @@
                                       class="sort-indicator"
                                       aria-hidden="true"
                                     >
-                                      {{ getHistorySortIndicator("operation") }}
+                                      <svg viewBox="0 0 12 16">
+                                        <path
+                                          class="sort-up"
+                                          d="m6 1 4 5H2z"
+                                        ></path>
+                                        <path
+                                          class="sort-down"
+                                          d="m6 15-4-5h8z"
+                                        ></path>
+                                      </svg>
                                     </span>
                                   </button>
                                 </th>
@@ -692,7 +812,16 @@
                                       class="sort-indicator"
                                       aria-hidden="true"
                                     >
-                                      {{ getHistorySortIndicator("revision") }}
+                                      <svg viewBox="0 0 12 16">
+                                        <path
+                                          class="sort-up"
+                                          d="m6 1 4 5H2z"
+                                        ></path>
+                                        <path
+                                          class="sort-down"
+                                          d="m6 15-4-5h8z"
+                                        ></path>
+                                      </svg>
                                     </span>
                                   </button>
                                 </th>
@@ -716,9 +845,16 @@
                                         class="sort-indicator"
                                         aria-hidden="true"
                                       >
-                                        {{
-                                          getHistorySortIndicator(column.key)
-                                        }}
+                                        <svg viewBox="0 0 12 16">
+                                          <path
+                                            class="sort-up"
+                                            d="m6 1 4 5H2z"
+                                          ></path>
+                                          <path
+                                            class="sort-down"
+                                            d="m6 15-4-5h8z"
+                                          ></path>
+                                        </svg>
                                       </span>
                                     </button>
                                   </th>
@@ -733,12 +869,9 @@
                                 <tr>
                                   <td>
                                     <span
-                                      class="operation-badge"
-                                      [class.operation-badge--update]="
-                                        history.operation === 'UPDATE'
-                                      "
-                                      [class.operation-badge--delete]="
-                                        history.operation === 'DELETE'
+                                      [class]="
+                                        'operation-badge operation-badge--' +
+                                        getOperationTone(history.operation)
                                       "
                                     >
                                       {{ history.operation }}
@@ -753,10 +886,43 @@
                                   ) {
                                     @let historyValue =
                                       getHistoryValue(history, column);
-                                    <td
-                                      [class.null-value]="historyValue === null"
-                                    >
-                                      {{ formatCellValue(historyValue, true) }}
+                                    <td>
+                                      <span
+                                        class="cell-value history-cell-value"
+                                        [class.cell-value--expandable]="
+                                          isExpandableCellValue(historyValue)
+                                        "
+                                        [class.null-value]="
+                                          historyValue === null
+                                        "
+                                        [attr.title]="
+                                          historyValue === null
+                                            ? null
+                                            : formatCellValue(
+                                                historyValue,
+                                                true
+                                              )
+                                        "
+                                        [attr.tabindex]="
+                                          isExpandableCellValue(historyValue)
+                                            ? 0
+                                            : null
+                                        "
+                                        [attr.aria-label]="
+                                          isExpandableCellValue(historyValue)
+                                            ? column.label +
+                                              ': ' +
+                                              formatCellValue(
+                                                historyValue,
+                                                true
+                                              )
+                                            : null
+                                        "
+                                      >
+                                        {{
+                                          formatCellValue(historyValue, true)
+                                        }}
+                                      </span>
                                     </td>
                                   }
                                 </tr>
@@ -774,65 +940,111 @@
         </div>
       }
 
-      <footer class="records-footer">
-        <strong>
-          {{ recordsResponse?.data?.totalElements ?? 0 }} records across
-          {{ recordsResponse?.data?.totalPages ?? 0 }} pages
-        </strong>
-
-        <div class="pagination">
-          <label for="items-per-page">Items per page:</label>
-          <select
-            id="items-per-page"
-            [value]="itemsPerPage"
-            [disabled]="isRecordsLoading"
-            (change)="onItemsPerPageChange($event)"
-          >
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-          <span>
-            {{ currentPageStart }} – {{ currentPageEnd }} of
-            {{ recordsResponse?.data?.totalElements ?? 0 }}
-          </span>
-          <div class="page-buttons" aria-label="Pagination">
-            <button
-              type="button"
-              [disabled]="currentPageNo === 0 || isRecordsLoading"
-              aria-label="First page"
-              (click)="goToPage(0)"
-            >
-              |‹
-            </button>
-            <button
-              type="button"
-              [disabled]="currentPageNo === 0 || isRecordsLoading"
-              aria-label="Previous page"
-              (click)="goToPage(currentPageNo - 1)"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
-              aria-label="Next page"
-              (click)="goToPage(currentPageNo + 1)"
-            >
-              ›
-            </button>
-            <button
-              type="button"
-              [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
-              aria-label="Last page"
-              (click)="goToPage(lastPageNo)"
-            >
-              ›|
-            </button>
+      @if (recordsResponse && !isRecordsLoading && !recordsErrorMessage) {
+        <footer class="records-footer">
+          <div class="records-summary">
+            <strong>
+              @if (activeFilterCount > 0) {
+                {{ filteredRows.length }} shown on this page /
+                {{ recordsResponse.data.totalElements }} total
+              } @else {
+                {{ recordsResponse.data.totalElements }} records across
+                {{ recordsResponse.data.totalPages }} pages
+              }
+            </strong>
+            <small>Sorting and filters apply to the current API page.</small>
           </div>
-        </div>
-      </footer>
+
+          <div class="pagination">
+            <label for="items-per-page">Items per page:</label>
+            <select
+              id="items-per-page"
+              [value]="itemsPerPage"
+              [disabled]="isRecordsLoading"
+              (change)="onItemsPerPageChange($event)"
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+            <span>
+              {{ currentPageStart }} – {{ currentPageEnd }} of
+              {{ recordsResponse.data.totalElements }}
+            </span>
+            <div class="page-buttons" aria-label="Pagination">
+              <button
+                type="button"
+                [disabled]="currentPageNo === 0 || isRecordsLoading"
+                aria-label="First page"
+                (click)="goToPage(0)"
+              >
+                <svg
+                  class="pagination-icon"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="M4 4v12M15 5l-5 5 5 5"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                [disabled]="currentPageNo === 0 || isRecordsLoading"
+                aria-label="Previous page"
+                (click)="goToPage(currentPageNo - 1)"
+              >
+                <svg
+                  class="pagination-icon"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="m13 5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
+                aria-label="Next page"
+                (click)="goToPage(currentPageNo + 1)"
+              >
+                <svg
+                  class="pagination-icon"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="m7 5 5 5-5 5"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
+                aria-label="Last page"
+                (click)="goToPage(lastPageNo)"
+              >
+                <svg
+                  class="pagination-icon"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <path d="m6 5 5 5-5 5M16 4v12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </footer>
+      }
     </section>
   }
 </main>

@@ -11,6 +11,7 @@ runtime JSON records, mock responses, or automatic data fallback.
 - Source-field filtering with independent AND/OR joins.
 - Sorting for every main and history column, expandable history, hover/focus history scrolling,
   loading states, and retryable errors.
+- Independent bounded record/history viewports with sticky headers and current-page scope messaging.
 - Server-driven, zero-based pagination with selectable page sizes.
 - Explicit component subscriptions to typed service Observables.
 
@@ -146,6 +147,9 @@ or enable CORS on the backend; no service-code change is required.
 - Retry repeats the same selected label, page number, and page size.
 - No static response is displayed when an API is unavailable.
 
+The regression suite currently contains 45 passing tests across component, service, and application
+coverage. The production build completes without warnings.
+
 ## Commands
 
 ```bash
@@ -165,6 +169,7 @@ generated build output and must remain in source control.
 - [API data contracts](docs/DATA-CONTRACTS.md)
 - [UI/UX specification](docs/UI-UX-SPEC.md)
 - [Audit UI refinement and responsive behavior](docs/AUDIT-UI-REFINEMENT.md)
+- [Audit functionality and UX review report](docs/AUDIT-REVIEW-REPORT.md)
 - [Dependency audit](docs/DEPENDENCIES.md)
 - [Reusable build prompt](docs/BUILD-PROMPT.md)
 - [API-only migration record](without_Dummy_data.md)
