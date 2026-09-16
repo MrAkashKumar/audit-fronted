@@ -502,7 +502,12 @@
           <p>Change or clear the filter conditions to see more results.</p>
         </div>
       } @else {
-        <div class="records-table-wrap scroll-table-wrap">
+        <div
+          class="records-table-wrap scroll-table-wrap"
+          role="region"
+          tabindex="0"
+          aria-label="Audit records"
+        >
           <table class="records-table data-table">
             <thead>
               <tr>

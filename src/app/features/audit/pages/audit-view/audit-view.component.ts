@@ -454,6 +454,11 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     fieldKey: string,
     trigger?: HTMLButtonElement,
   ): void {
+    if (condition.fieldKey !== fieldKey) {
+      condition.operator = "contains";
+      condition.value = "";
+    }
+
     condition.fieldKey = fieldKey;
     this.closeFilterFieldMenu();
     queueMicrotask(() => trigger?.focus());

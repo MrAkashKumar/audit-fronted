@@ -39,6 +39,8 @@ Field, Condition, and Value now use the same anatomy:
 - Boolean fields keep a select control with the same visual dimensions.
 - Empty/not-empty operators display `No value required` in the same Value position.
 - Added conditions retain independent AND/OR joins.
+- Selecting a different Field starts that rule fresh by clearing its value and returning the
+  operator to `Contains`; selecting the already active Field does not discard the current rule.
 
 ## Space optimization
 
@@ -66,9 +68,11 @@ The main records table and nested history table use the same width strategy:
 - `min-width: 100%` prevents a narrow schema from leaving an unfinished-looking empty region.
 - `width: max-content` preserves readable cells when many dynamic columns arrive.
 - The containing region handles horizontal overflow rather than compressing cell content.
-- The main records overflow remains available as needed. The audit-history scrollbar uses a slim,
-  component-local warm-gray treatment that appears on hover or keyboard focus and does not reserve
-  empty space when the schema fits.
+- Main-record and audit-history overflow remain available as needed. Their slim, component-local
+  warm-gray scrollbars appear on pointer hover or keyboard focus and do not reserve empty space at
+  rest. Touch users can move the same regions with the native horizontal swipe gesture.
+- The expanded-history tree keeps a compact indentation, and the final dynamic history column has
+  explicit end padding so its content and the table boundary remain clear when fully scrolled.
 
 ## Responsive layout
 

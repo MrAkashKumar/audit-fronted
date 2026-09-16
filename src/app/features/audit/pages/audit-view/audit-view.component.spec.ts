@@ -413,6 +413,37 @@ describe("AuditViewComponent", () => {
     expect(component.filteredRows).toHaveLength(0);
   });
 
+  it("starts a fresh filter when its selected field changes", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    component.addFilterCondition();
+
+    const condition = component.filterConditions[0];
+    condition.fieldKey = "ID";
+    condition.operator = "equals";
+    condition.value = "2001";
+
+    component.selectFilterField(condition, "LOCOMOTIVE_CODE");
+
+    expect(condition).toMatchObject({
+      fieldKey: "LOCOMOTIVE_CODE",
+      operator: "contains",
+      value: "",
+    });
+
+    condition.operator = "equals";
+    condition.value = "SG-L-001";
+    component.selectFilterField(condition, "LOCOMOTIVE_CODE");
+
+    expect(condition).toMatchObject({
+      fieldKey: "LOCOMOTIVE_CODE",
+      operator: "equals",
+      value: "SG-L-001",
+    });
+  });
+
   it("shows table-label API failures without replacement labels", async () => {
     labelsResponseOverride = throwError(() => new Error("API unavailable"));
     const fixture = await createFixture();

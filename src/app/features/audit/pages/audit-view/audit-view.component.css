@@ -719,6 +719,29 @@ button:focus-visible {
 .scroll-table-wrap {
   overflow-x: auto;
   overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.scroll-table-wrap::-webkit-scrollbar {
+  height: 0;
+}
+
+.scroll-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-table-wrap:is(:hover, :focus-within) {
+  scrollbar-color: #8d8982 transparent;
+  scrollbar-width: thin;
+}
+
+.scroll-table-wrap:is(:hover, :focus-within)::-webkit-scrollbar {
+  height: 0.38rem;
+}
+
+.scroll-table-wrap:is(:hover, :focus-within)::-webkit-scrollbar-thumb {
+  background: #8d8982;
+  border-radius: 999px;
 }
 
 .data-table {
@@ -891,15 +914,15 @@ th:is([aria-sort="ascending"], [aria-sort="descending"]) .sort-indicator {
   position: relative;
   width: 100%;
   min-width: 0;
-  padding: 0.85rem 1rem 0.9rem 3.4rem;
+  padding: 0.85rem 1rem 0.9rem 2.75rem;
   box-shadow: inset 4px 0 #d5a93c;
 }
 
 .history-content::before {
   position: absolute;
   top: 0;
-  left: 1.85rem;
-  width: 1.5rem;
+  left: 1.25rem;
+  width: 1.25rem;
   height: 1.75rem;
   border-left: 1px solid #625742;
   border-bottom: 1px solid #625742;
@@ -936,25 +959,6 @@ th:is([aria-sort="ascending"], [aria-sort="descending"]) .sort-indicator {
   border: 1px solid #403b33;
   border-radius: 0.7rem;
   outline: none;
-  scrollbar-color: transparent transparent;
-  scrollbar-width: thin;
-}
-
-.history-table-wrap::-webkit-scrollbar {
-  height: 0.38rem;
-}
-
-.history-table-wrap::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 999px;
-}
-
-.history-table-wrap:is(:hover, :focus-within) {
-  scrollbar-color: #8d8982 transparent;
-}
-
-.history-table-wrap:is(:hover, :focus-within)::-webkit-scrollbar-thumb {
-  background: #8d8982;
 }
 
 .history-table-wrap:focus-visible {
@@ -986,6 +990,11 @@ th:is([aria-sort="ascending"], [aria-sort="descending"]) .sort-indicator {
 .history-table th:nth-child(2),
 .history-table td:nth-child(2) {
   min-width: 8rem;
+}
+
+.history-table th:last-child,
+.history-table td:last-child {
+  padding-right: 1.5rem;
 }
 
 .history-table tbody tr:last-child td {
@@ -1222,16 +1231,6 @@ th:is([aria-sort="ascending"], [aria-sort="descending"]) .sort-indicator {
 
   .pagination {
     margin-left: 0;
-  }
-}
-
-@media (hover: none), (pointer: coarse) {
-  .history-table-wrap {
-    scrollbar-color: #6f6a62 transparent;
-  }
-
-  .history-table-wrap::-webkit-scrollbar-thumb {
-    background: #6f6a62;
   }
 }
 

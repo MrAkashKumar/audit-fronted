@@ -41,6 +41,8 @@ business-envelope `status` or `code`.
 - Numeric and date fields use ordered comparison.
 - Each rule after the first independently joins with AND or OR.
 - AND groups are evaluated before OR groups.
+- Changing a rule to a different field clears its value and restores the default `Contains`
+  operator; re-selecting the active field preserves the rule.
 - Filtering applies to the current API page only.
 
 ## Non-functional requirements
