@@ -169,5 +169,6 @@ These are recommendations, not prerequisites for running the feature:
 - No missing direct dependency was reported.
 - npm audit reported zero known vulnerabilities on 2026-09-15.
 - The application compiles.
-- All 18 tests pass.
+- Strict unused-local and unused-parameter TypeScript checks pass for application and test code.
+- All 21 tests pass.
 - Production build completes without warnings.

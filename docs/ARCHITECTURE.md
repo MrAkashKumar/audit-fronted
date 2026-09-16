@@ -74,9 +74,19 @@ enabled from response metadata.
 
 ## Dynamic schema
 
-Main columns are the union of keys in non-null `originalData`, excluding technical audit fields.
-History columns are computed per record from its history entries. A table change rebuilds both
-schemas, so new backend tables work without a new component.
+Main columns are the union of keys in non-null `originalData`. Only `ID` is omitted from the
+generated list because the record identifier already renders in the dedicated ID column. Fields
+such as `CREATED_BY`, `CREATED_ON`, `UPDATED_BY`, `UPDATED_ON`, and `VERSION` remain fully dynamic
+and render whenever the selected API response supplies them.
+
+History columns are computed per record from its history entries. The fixed history semantics
+(`operation` and `revision`) render in dedicated columns, while transport/technical aliases such as
+`REV`, `REVTYPE`, and `revisionTypeCode` are omitted from the generated history list. A feature
+selection rebuilds both schemas, so new backend labels work without table-specific component code.
+
+Column type inference stops after finding the first non-null value for a field. This avoids scanning
+and allocating values for every record while preserving the same dynamic text, number, boolean, and
+date behavior.
 
 ## Styling
 

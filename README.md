@@ -156,6 +156,10 @@ npm run build
 
 ## Documentation
 
+The files below are maintained project deliverables. They document the product, API contract,
+architecture, UI behavior, dependency decisions, and backend-integration history; they are not
+generated build output and must remain in source control.
+
 - [Product requirements](docs/PRD.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [API data contracts](docs/DATA-CONTRACTS.md)
