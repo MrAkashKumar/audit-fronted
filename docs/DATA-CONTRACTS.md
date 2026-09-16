@@ -90,7 +90,8 @@ interface DynamicAuditHistoryEntry {
 ## UI mapping
 
 - `id` renders in the fixed ID column.
-- `originalData` supplies dynamic main columns and filter fields.
+- `originalData` supplies every dynamic main column and filter field. Only `ID` is omitted from that
+  generated list because `id` already renders in the dedicated ID column.
 - `changeSummary.totalRevisions` supplies the revision badge.
 - `originalRecordPresent` supplies Current/Audit only state.
 - `auditHistory` supplies the expandable history table.

@@ -42,14 +42,6 @@ export class AuditViewComponent implements OnInit, OnDestroy {
   private nextFilterId = 1;
   private readonly defaultDocumentTitle = "Audit features | Audit Frontend";
 
-  private readonly mainColumnExclusions = new Set([
-    "ID",
-    "CREATED_BY",
-    "CREATED_ON",
-    "UPDATED_BY",
-    "UPDATED_ON",
-    "VERSION",
-  ]);
   private readonly historyColumnExclusions = new Set([
     "sequenceNumber",
     "revision",
@@ -840,11 +832,7 @@ export class AuditViewComponent implements OnInit, OnDestroy {
   }
 
   isCodeColumn(columnKey: string): boolean {
-    return (
-      columnKey.endsWith("_CODE") ||
-      columnKey.endsWith("_DATE") ||
-      columnKey === "METAL_CODE"
-    );
+    return columnKey.endsWith("_CODE") || columnKey.endsWith("_DATE");
   }
 
   isStatusColumn(columnKey: string): boolean {
@@ -1146,10 +1134,6 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     source: "originalData" | "auditHistory",
   ): AuditViewColumn[] {
     const keys = new Set<string>();
-    const exclusions =
-      source === "originalData"
-        ? this.mainColumnExclusions
-        : this.historyColumnExclusions;
 
     for (const record of records) {
       const dataItems =
@@ -1161,7 +1145,12 @@ export class AuditViewComponent implements OnInit, OnDestroy {
 
       for (const dataItem of dataItems) {
         for (const key of Object.keys(dataItem)) {
-          if (!exclusions.has(key)) {
+          const isExcluded =
+            source === "originalData"
+              ? key === "ID"
+              : this.historyColumnExclusions.has(key);
+
+          if (!isExcluded) {
             keys.add(key);
           }
         }
@@ -1180,9 +1169,9 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     records: DynamicAuditRecord[],
     source: "originalData" | "auditHistory",
   ): AuditFieldType {
-    const values: AuditCellValue[] = [];
+    let sampleValue: AuditCellValue | undefined;
 
-    for (const record of records) {
+    recordLoop: for (const record of records) {
       const dataItems =
         source === "originalData"
           ? record.originalData
@@ -1191,11 +1180,14 @@ export class AuditViewComponent implements OnInit, OnDestroy {
           : record.auditHistory;
 
       for (const dataItem of dataItems) {
-        values.push(dataItem[key] ?? null);
+        const value = dataItem[key] ?? null;
+
+        if (value !== null) {
+          sampleValue = value;
+          break recordLoop;
+        }
       }
     }
-
-    const sampleValue = values.find((value) => value !== null);
 
     if (typeof sampleValue === "number") {
       return "number";

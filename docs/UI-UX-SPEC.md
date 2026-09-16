@@ -150,8 +150,8 @@ Requirements:
 
 - Table schema changes after every table selection.
 - ID, Revisions, and Record State remain dedicated columns.
-- ID, business columns, Revisions, and Record State cycle through ascending, descending, and unsorted states.
-- Business columns come from originalData.
+- ID, source columns, Revisions, and Record State cycle through ascending, descending, and unsorted states.
+- Every `originalData` source column is displayed dynamically except `ID`, which already has a dedicated column.
 - Missing current data displays an em dash.
 - Wide schemas scroll horizontally instead of shrinking text below readability.
 - Revision count uses a compact gold indicator.

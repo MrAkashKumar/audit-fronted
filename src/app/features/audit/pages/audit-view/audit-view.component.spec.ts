@@ -44,6 +44,11 @@ const createRecordsResponse = (
         originalRecordPresent: true,
         originalData: {
           ID: 2001,
+          CREATED_BY: "AUDIT_ADMIN",
+          CREATED_ON: "2026-08-01T09:00:00Z",
+          UPDATED_BY: "OPS_SG",
+          UPDATED_ON: "2026-08-28T09:35:12Z",
+          VERSION: 2,
           LOCOMOTIVE_CODE: "SG-L-001",
           LOCOMOTIVE_NAME: "Merlion One",
           DEPOT_CODE: "TJS",
@@ -199,19 +204,48 @@ describe("AuditViewComponent", () => {
       pageSize: 10,
     });
     expect(component.columns.map((column) => column.key)).toEqual([
+      "CREATED_BY",
+      "CREATED_ON",
+      "UPDATED_BY",
+      "UPDATED_ON",
+      "VERSION",
       "LOCOMOTIVE_CODE",
       "LOCOMOTIVE_NAME",
       "DEPOT_CODE",
       "FLEET_STATUS",
     ]);
     expect(component.columns.map((column) => column.label)).toEqual([
+      "Created BY",
+      "Created ON",
+      "Updated BY",
+      "Updated ON",
+      "Version",
       "Locomotive Code",
       "Locomotive Name",
       "Depot Code",
       "Fleet Status",
     ]);
+    expect(
+      Object.fromEntries(
+        component.columns.map((column) => [column.key, column.dataType]),
+      ),
+    ).toMatchObject({
+      CREATED_ON: "date",
+      UPDATED_ON: "date",
+      VERSION: "number",
+      LOCOMOTIVE_CODE: "text",
+    });
     expect(component.filterFields.map((field) => field.key)).not.toContain(
       "COUNTRY_CODE",
+    );
+    expect(component.filterFields.map((field) => field.key)).toEqual(
+      expect.arrayContaining([
+        "CREATED_BY",
+        "CREATED_ON",
+        "UPDATED_BY",
+        "UPDATED_ON",
+        "VERSION",
+      ]),
     );
     expect(
       component.rows[0].historyColumns.map((column) => column.key),
