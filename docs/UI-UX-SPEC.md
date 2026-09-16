@@ -4,7 +4,7 @@
 
 The Audit Viewer is a focused operational console, not a general dashboard. It uses a dark, high-contrast surface with gold emphasis, compact tables, and progressive disclosure:
 
-- Start with table selection.
+- Start with feature selection.
 - Reveal records after selection.
 - Reveal filters only when requested.
 - Reveal revision history only for expanded rows.
@@ -12,20 +12,20 @@ The Audit Viewer is a focused operational console, not a general dashboard. It u
 ## Visual hierarchy
 
 ```text
-AUDIT TABLE
+AUDIT FEATURE
 ┌────────────────────────────────────────────────────────────┐ ┌───────────┐
-│ Search by table name...                          3 tables  │ │ ↻ Refresh │
+│ Search by feature name...                    3 features  │ │ ↻ Refresh │
 └────────────────────────────────────────────────────────────┘ └───────────┘
 
 One of the following states:
 
-A. Choose-table state
+A. Choose-feature state
 B. Response banner + records table
 C. Response banner + open filter builder + records table
 D. Records table + expanded history
 ```
 
-## State A: no selected table
+## State A: no selected feature
 
 This is the initial state and the state after Refresh.
 
@@ -34,10 +34,10 @@ This is the initial state and the state after Refresh.
 │                                                                          │
 │                                [ Search ]                                │
 │                                                                          │
-│                         Choose an audit table                            │
+│                        Choose an audit feature                           │
 │                                                                          │
-│         Search by table name above. Records load only after you          │
-│                            select a table.                               │
+│        Search by feature name above. Records load only after you         │
+│                           select a feature.                              │
 │                                                                          │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -49,11 +49,11 @@ Requirements:
 - No record count, filter, table, or pagination.
 - Table labels may already be loaded; records must not be loaded.
 
-## State B: table selector open
+## State B: feature selector open
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ Search by table name...                          3 tables  │
+│ Search by feature name...                    3 features  │
 ├────────────────────────────────────────────────────────────┤
 │ HC   Holiday Calendar                             Current ✓│
 │      Holiday Calendar                                      │
@@ -75,7 +75,7 @@ Requirements:
 - Search filters both source labels and friendly display names case-insensitively.
 - Arrow Up/Down moves through results, Enter selects, and Escape closes the menu.
 - Non-empty search text exposes a keyboard-accessible clear action.
-- The count displays total available tables.
+- The count displays total available audit features.
 
 ## State C: open filter builder
 
@@ -113,7 +113,7 @@ Requirements:
 - Value keeps the same compact control height and receives the shared gold focus treatment without opening an operating-system popup.
 - The Field list contains only ID and displayed originalData fields.
 - Empty/not-empty operators replace the value input with “No value required.”
-- Controls stack into one column on narrow screens.
+- Controls use a compact two-row layout on tablets and stack on narrow screens.
 
 ## State D: dynamic records
 
@@ -181,7 +181,11 @@ Requirements:
 - History has its own independently generated schema.
 - INSERT is green, UPDATE is blue, DELETE is red.
 - Null is rendered explicitly as italic “null.”
-- History is width-contained inside its parent record and shows its own styled horizontal scrollbar whenever the dynamic history schema is wider than the available space.
+- Operation, Revision, and every dynamic history column cycle through ascending, descending, and
+  unsorted states without changing the API response order.
+- History is width-contained inside its parent record. Its slim horizontal scrollbar is revealed on
+  hover or keyboard focus only when the dynamic history schema overflows; touch devices retain a
+  muted visible thumb.
 - The history scroll region is keyboard-focusable and receives a visible focus treatment.
 
 ## Interaction state model
@@ -256,19 +260,25 @@ flowchart TB
 
 ## Responsive behavior
 
-### 861 pixels and wider
+### Above 1100 pixels
 
 - Search and Refresh appear side by side.
 - Filter introduction and actions appear on one row.
 - Each condition appears as WHERE + Field + Condition + Value + Remove.
-- Table may scroll horizontally.
+- Short response schemas fill the available card width; wide schemas scroll horizontally.
 
-### 560–860 pixels
+### 761–1100 pixels
+
+- Search and Refresh remain side by side while space allows.
+- Each condition uses a compact join line above aligned Field, Condition, and Value controls.
+- Dynamic records and history keep readable cells with horizontal scrolling.
+
+### 561–760 pixels
 
 - Search and Refresh stack.
-- Response banner, toolbar, and footer stack.
+- Toolbar and footer stack or wrap without overlap.
 - Filter header/actions wrap.
-- Conditions become a single column.
+- Filter controls become a single column; Remove stays aligned with the rule join.
 - Pagination wraps without overlapping.
 
 ### Below 560 pixels
@@ -278,13 +288,16 @@ flowchart TB
 - Expanded-history left padding reduces.
 - Native controls remain large enough for touch.
 
+The implementation details and viewport verification matrix are documented in
+[AUDIT-UI-REFINEMENT.md](AUDIT-UI-REFINEMENT.md).
+
 ## Content strings
 
 | Context              | Copy                                                                                                           |
 | -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Empty heading        | Choose an audit table                                                                                          |
-| Empty support        | Search by table name above. Records load only after you select a table.                                        |
-| Search placeholder   | Search by table name...                                                                                        |
+| Empty heading        | Choose an audit feature                                                                                        |
+| Empty support        | Search by feature name above. Records load only after you select a feature.                                    |
+| Search placeholder   | Search by feature name...                                                                                      |
 | Closed filter action | Filter records                                                                                                 |
 | Open filter action   | Hide filters                                                                                                   |
 | Filter heading       | Filter records                                                                                                 |
@@ -301,7 +314,7 @@ flowchart TB
 - [x] Table and history columns are independent and dynamic.
 - [x] Filter builder matches the supplied layout hierarchy.
 - [x] Source-only field restriction is visible and tested.
-- [x] Record headers are sortable and expose their direction.
+- [x] Every record and audit-history data header is sortable and exposes its direction.
 - [x] Pagination is aligned to the lower right on desktop.
 - [x] Refresh clears the selection.
 - [x] Narrow layouts stack without overlap.

@@ -4,8 +4,8 @@ export const AUDIT_ROUTES: Routes = [
   {
     path: "",
     loadComponent: () =>
-      import("./pages/audit-view/audit-view").then(
-        (component) => component.AuditView,
+      import("./pages/audit-view/audit-view.component").then(
+        (component) => component.AuditViewComponent,
       ),
   },
 ];

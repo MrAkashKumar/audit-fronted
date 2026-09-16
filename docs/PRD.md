@@ -48,7 +48,7 @@ business-envelope `status` or `code`.
 - Typed HttpClient service.
 - Explicit component subscriptions and cleanup.
 - Accessible roles, labels, focus treatment, and keyboard selectors.
-- Feature-specific CSS in `audit-view.css`.
+- Feature-specific CSS in `audit-view.component.css`.
 - No additional UI dependency.
 - Unit tests for service endpoints, pagination parameters, error propagation, and feature behavior.
 - Production build must pass.

@@ -5,11 +5,12 @@ runtime JSON records, mock responses, or automatic data fallback.
 
 ## What the application provides
 
-- Searchable audit-table selector populated by the backend.
+- Searchable audit-feature selector populated by the backend.
 - Dynamic record columns derived from each response's `originalData`.
 - Dynamic expanded-history columns derived from each record's `auditHistory`.
 - Source-field filtering with independent AND/OR joins.
-- Sorting, expandable history, horizontal history scrolling, loading states, and retryable errors.
+- Sorting for every main and history column, expandable history, hover/focus history scrolling,
+  loading states, and retryable errors.
 - Server-driven, zero-based pagination with selectable page sizes.
 - Explicit component subscriptions to typed service Observables.
 
@@ -73,7 +74,7 @@ See [docs/DATA-CONTRACTS.md](docs/DATA-CONTRACTS.md) for the complete typed cont
 ## Runtime flow
 
 ```text
-AuditView.ngOnInit
+AuditViewComponent.ngOnInit
   → AuditService.getAuditTableLabels()
   → component subscribes
   → data.tableLabels renders in the selector
@@ -107,10 +108,10 @@ audit-fronted/
 │   │       │   ├── audit-table-label.model.ts
 │   │       │   └── audit-view.model.ts
 │   │       ├── pages/audit-view/
-│   │       │   ├── audit-view.ts
-│   │       │   ├── audit-view.html
-│   │       │   ├── audit-view.css
-│   │       │   └── audit-view.spec.ts
+│   │       │   ├── audit-view.component.ts
+│   │       │   ├── audit-view.component.html
+│   │       │   ├── audit-view.component.css
+│   │       │   └── audit-view.component.spec.ts
 │   │       └── services/
 │   │           ├── audit.service.ts
 │   │           └── audit.service.spec.ts
@@ -140,7 +141,7 @@ or enable CORS on the backend; no service-code change is required.
 
 ## Error behavior
 
-- A table-label failure leaves the selector empty and shows `Unable to load audit tables.`
+- A table-label failure leaves the selector empty and shows `Unable to load audit features.`
 - A record failure clears the previous rows and shows a Retry action.
 - Retry repeats the same selected label, page number, and page size.
 - No static response is displayed when an API is unavailable.
@@ -159,6 +160,7 @@ npm run build
 - [Architecture](docs/ARCHITECTURE.md)
 - [API data contracts](docs/DATA-CONTRACTS.md)
 - [UI/UX specification](docs/UI-UX-SPEC.md)
+- [Audit UI refinement and responsive behavior](docs/AUDIT-UI-REFINEMENT.md)
 - [Dependency audit](docs/DEPENDENCIES.md)
 - [Reusable build prompt](docs/BUILD-PROMPT.md)
 - [API-only migration record](without_Dummy_data.md)

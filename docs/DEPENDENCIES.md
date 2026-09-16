@@ -138,7 +138,7 @@ The npm report counted 603 packages across production, development, and optional
 
 ### 7. Audit UI styling does not require Tailwind utilities
 
-src/styles.css imports tailwindcss, but no project-level PostCSS configuration file was found. The Audit Viewer uses native CSS in `audit-view.css` with Angular component encapsulation and does not rely on Tailwind utility classes. Tailwind and its PostCSS packages remain documented because they were part of the supplied dependency set; no new styling dependency is needed.
+src/styles.css imports tailwindcss, but no project-level PostCSS configuration file was found. The Audit Viewer uses native CSS in `audit-view.component.css` with Angular component encapsulation and does not rely on Tailwind utility classes. Tailwind and its PostCSS packages remain documented because they were part of the supplied dependency set; no new styling dependency is needed.
 
 ## Dependency decision matrix
 

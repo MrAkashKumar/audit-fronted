@@ -30,17 +30,17 @@ const SORT_RECORD_STATE = "__RECORD_STATE__";
 
 @Component({
   selector: "app-audit-view",
-  templateUrl: "./audit-view.html",
-  styleUrl: "./audit-view.css",
+  templateUrl: "./audit-view.component.html",
+  styleUrl: "./audit-view.component.css",
 })
-export class AuditView implements OnInit, OnDestroy {
+export class AuditViewComponent implements OnInit, OnDestroy {
   private readonly auditService = inject(AuditService);
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly documentTitle = inject(Title);
   private auditRecordsSubscription?: Subscription;
   private tableLabelsSubscription?: Subscription;
   private nextFilterId = 1;
-  private readonly defaultDocumentTitle = "Audit tables | Audit Frontend";
+  private readonly defaultDocumentTitle = "Audit features | Audit Frontend";
 
   private readonly mainColumnExclusions = new Set([
     "ID",
@@ -59,7 +59,7 @@ export class AuditView implements OnInit, OnDestroy {
     "REV",
     "REVTYPE",
   ]);
-  private readonly filterOperators: AuditFilterOperatorOption[] = [
+  readonly filterOperatorOptions: AuditFilterOperatorOption[] = [
     { value: "contains", label: "Contains" },
     { value: "equals", label: "Equals" },
     { value: "notEquals", label: "Not equals" },
@@ -81,6 +81,8 @@ export class AuditView implements OnInit, OnDestroy {
   tableSearchQuery = "";
   sortKey = "";
   sortDirection: AuditSortDirection = "";
+  historySortKey = "";
+  historySortDirection: AuditSortDirection = "";
   itemsPerPage = 10;
   currentPageNo = 0;
   isTableMenuOpen = false;
@@ -122,7 +124,7 @@ export class AuditView implements OnInit, OnDestroy {
 
   get filterFieldOptions(): AuditViewColumn[] {
     return [
-      { key: "", label: "Field", dataType: "text" },
+      { key: "", label: "Select field", dataType: "text" },
       ...this.filterFields,
     ];
   }
@@ -204,7 +206,7 @@ export class AuditView implements OnInit, OnDestroy {
         error: (error: unknown) => {
           console.error("Unable to load audit table labels.", error);
           this.tableLabels = [];
-          this.tableLabelsErrorMessage = "Unable to load audit tables.";
+          this.tableLabelsErrorMessage = "Unable to load audit features.";
           this.areTableLabelsLoading = false;
           this.changeDetector.markForCheck();
         },
@@ -224,6 +226,7 @@ export class AuditView implements OnInit, OnDestroy {
     this.isRecordsLoading = true;
     this.recordsErrorMessage = "";
     this.expandedRowIds.clear();
+    this.resetHistorySorting();
 
     this.auditRecordsSubscription = this.auditService
       .getAuditRecords(tableLabel, pageNo, pageSize)
@@ -271,6 +274,7 @@ export class AuditView implements OnInit, OnDestroy {
     this.expandedRowIds.clear();
     this.resetFilters();
     this.resetSorting();
+    this.resetHistorySorting();
     this.documentTitle.setTitle(this.defaultDocumentTitle);
 
     this.loadTableLabels();
@@ -522,7 +526,7 @@ export class AuditView implements OnInit, OnDestroy {
   getFilterFieldLabel(fieldKey: string): string {
     return (
       this.filterFieldOptions.find((field) => field.key === fieldKey)?.label ??
-      "Field"
+      "Select field"
     );
   }
 
@@ -542,7 +546,7 @@ export class AuditView implements OnInit, OnDestroy {
     this.closeFilterFieldMenu();
     this.openOperatorConditionId = condition.id;
     this.activeOperatorOptionIndex = Math.max(
-      this.filterOperators.findIndex(
+      this.filterOperatorOptions.findIndex(
         (option) => option.value === condition.operator,
       ),
       0,
@@ -592,15 +596,15 @@ export class AuditView implements OnInit, OnDestroy {
       this.activeOperatorOptionIndex =
         (this.activeOperatorOptionIndex +
           offset +
-          this.filterOperators.length) %
-        this.filterOperators.length;
+          this.filterOperatorOptions.length) %
+        this.filterOperatorOptions.length;
       return;
     }
 
     if ((event.key === "Enter" || event.key === " ") && isOpen) {
       event.preventDefault();
       const activeOperator =
-        this.filterOperators[this.activeOperatorOptionIndex];
+        this.filterOperatorOptions[this.activeOperatorOptionIndex];
 
       if (activeOperator) {
         this.selectFilterOperator(condition, activeOperator.value, trigger);
@@ -622,8 +626,8 @@ export class AuditView implements OnInit, OnDestroy {
 
   getFilterOperatorLabel(operator: AuditFilterOperator): string {
     return (
-      this.filterOperators.find((option) => option.value === operator)?.label ??
-      "Condition"
+      this.filterOperatorOptions.find((option) => option.value === operator)
+        ?.label ?? "Condition"
     );
   }
 
@@ -638,10 +642,6 @@ export class AuditView implements OnInit, OnDestroy {
     condition.value = (
       event.target as HTMLInputElement | HTMLSelectElement
     ).value;
-  }
-
-  getOperatorOptions(): AuditFilterOperatorOption[] {
-    return this.filterOperators;
   }
 
   getFilterInputType(
@@ -728,10 +728,57 @@ export class AuditView implements OnInit, OnDestroy {
 
   getSortIndicator(key: string): string {
     if (this.sortKey !== key || !this.sortDirection) {
-      return "";
+      return "↕";
     }
 
     return this.sortDirection === "asc" ? "↑" : "↓";
+  }
+
+  toggleHistorySort(key: string): void {
+    if (this.historySortKey !== key) {
+      this.historySortKey = key;
+      this.historySortDirection = "asc";
+      return;
+    }
+
+    if (this.historySortDirection === "asc") {
+      this.historySortDirection = "desc";
+      return;
+    }
+
+    this.resetHistorySorting();
+  }
+
+  getHistoryAriaSort(key: string): "ascending" | "descending" | null {
+    if (this.historySortKey !== key || !this.historySortDirection) {
+      return null;
+    }
+
+    return this.historySortDirection === "asc" ? "ascending" : "descending";
+  }
+
+  getHistorySortIndicator(key: string): string {
+    if (this.historySortKey !== key || !this.historySortDirection) {
+      return "↕";
+    }
+
+    return this.historySortDirection === "asc" ? "↑" : "↓";
+  }
+
+  getSortedAuditHistory(row: AuditViewRow): AuditViewRow["auditHistory"] {
+    if (!this.historySortKey || !this.historySortDirection) {
+      return row.auditHistory;
+    }
+
+    const direction = this.historySortDirection === "asc" ? 1 : -1;
+
+    return [...row.auditHistory].sort((left, right) =>
+      this.compareSortValues(
+        this.getHistorySortValue(left, this.historySortKey),
+        this.getHistorySortValue(right, this.historySortKey),
+        direction,
+      ),
+    );
   }
 
   canExpandRow(row: AuditViewRow): boolean {
@@ -741,11 +788,13 @@ export class AuditView implements OnInit, OnDestroy {
   toggleRow(rowId: string | number): void {
     if (this.expandedRowIds.has(rowId)) {
       this.expandedRowIds.delete(rowId);
+      this.resetHistorySorting();
       return;
     }
 
     this.expandedRowIds.clear();
     this.expandedRowIds.add(rowId);
+    this.resetHistorySorting();
   }
 
   isRowExpanded(rowId: string | number): boolean {
@@ -836,6 +885,11 @@ export class AuditView implements OnInit, OnDestroy {
     this.sortDirection = "";
   }
 
+  private resetHistorySorting(): void {
+    this.historySortKey = "";
+    this.historySortDirection = "";
+  }
+
   private sortRows(rows: AuditViewRow[]): AuditViewRow[] {
     if (!this.sortKey || !this.sortDirection) {
       return rows;
@@ -843,41 +897,13 @@ export class AuditView implements OnInit, OnDestroy {
 
     const direction = this.sortDirection === "asc" ? 1 : -1;
 
-    return [...rows].sort((left, right) => {
-      const leftValue = this.getSortValue(left, this.sortKey);
-      const rightValue = this.getSortValue(right, this.sortKey);
-
-      if (leftValue === null || leftValue === undefined || leftValue === "") {
-        return rightValue === null ||
-          rightValue === undefined ||
-          rightValue === ""
-          ? 0
-          : 1;
-      }
-
-      if (
-        rightValue === null ||
-        rightValue === undefined ||
-        rightValue === ""
-      ) {
-        return -1;
-      }
-
-      if (typeof leftValue === "number" && typeof rightValue === "number") {
-        return (leftValue - rightValue) * direction;
-      }
-
-      if (typeof leftValue === "boolean" && typeof rightValue === "boolean") {
-        return (Number(leftValue) - Number(rightValue)) * direction;
-      }
-
-      return (
-        String(leftValue).localeCompare(String(rightValue), undefined, {
-          numeric: true,
-          sensitivity: "base",
-        }) * direction
-      );
-    });
+    return [...rows].sort((left, right) =>
+      this.compareSortValues(
+        this.getSortValue(left, this.sortKey),
+        this.getSortValue(right, this.sortKey),
+        direction,
+      ),
+    );
   }
 
   private getSortValue(row: AuditViewRow, key: string): AuditCellValue {
@@ -894,6 +920,54 @@ export class AuditView implements OnInit, OnDestroy {
     }
 
     return row.values[key] ?? null;
+  }
+
+  private getHistorySortValue(
+    history: AuditViewRow["auditHistory"][number],
+    key: string,
+  ): AuditCellValue {
+    if (key === "operation") {
+      return history.operation;
+    }
+
+    if (key === "revision") {
+      return history.revision;
+    }
+
+    return history[key] ?? null;
+  }
+
+  private compareSortValues(
+    leftValue: AuditCellValue | undefined,
+    rightValue: AuditCellValue | undefined,
+    direction: number,
+  ): number {
+    if (leftValue === null || leftValue === undefined || leftValue === "") {
+      return rightValue === null ||
+        rightValue === undefined ||
+        rightValue === ""
+        ? 0
+        : 1;
+    }
+
+    if (rightValue === null || rightValue === undefined || rightValue === "") {
+      return -1;
+    }
+
+    if (typeof leftValue === "number" && typeof rightValue === "number") {
+      return (leftValue - rightValue) * direction;
+    }
+
+    if (typeof leftValue === "boolean" && typeof rightValue === "boolean") {
+      return (Number(leftValue) - Number(rightValue)) * direction;
+    }
+
+    return (
+      String(leftValue).localeCompare(String(rightValue), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }) * direction
+    );
   }
 
   private getFilterFieldType(fieldKey: string): AuditFieldType {

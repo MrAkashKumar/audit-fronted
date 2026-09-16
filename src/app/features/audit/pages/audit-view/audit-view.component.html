@@ -1,0 +1,833 @@
+<main class="audit-view-page">
+  <section class="table-picker" aria-labelledby="audit-table-title">
+    <p id="audit-table-title" class="field-label">Audit feature</p>
+
+    <div class="picker-controls">
+      <div
+        class="picker-search-wrap"
+        (focusout)="onTablePickerFocusOut($event)"
+      >
+        <div class="picker-search">
+          <label class="visually-hidden" for="audit-view-table-search"
+            >Search audit features</label
+          >
+          <span class="search-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+          </span>
+          <input
+            id="audit-view-table-search"
+            type="search"
+            role="combobox"
+            autocomplete="off"
+            placeholder="Search by feature name..."
+            aria-autocomplete="list"
+            aria-controls="audit-view-table-options"
+            [attr.aria-expanded]="isTableMenuOpen"
+            [attr.aria-activedescendant]="getActiveTableOptionId()"
+            [value]="tableSearchQuery"
+            (focus)="onTableSearchFocus()"
+            (input)="onTableSearch($event)"
+            (keydown)="onTableSearchKeydown($event)"
+          />
+          @if (tableSearchQuery) {
+            <button
+              type="button"
+              class="clear-table-search"
+              aria-label="Clear feature search"
+              (click)="clearTableSearch()"
+            >
+              ×
+            </button>
+          }
+          <span class="table-count">
+            {{ tableLabels.length }}
+            {{ tableLabels.length === 1 ? "feature" : "features" }}
+          </span>
+        </div>
+
+        @if (isTableMenuOpen) {
+          <div
+            id="audit-view-table-options"
+            class="table-options"
+            role="listbox"
+          >
+            @if (areTableLabelsLoading) {
+              <div class="picker-state">Loading audit features…</div>
+            } @else if (tableLabelsErrorMessage) {
+              <div class="picker-state picker-state--error">
+                {{ tableLabelsErrorMessage }}
+              </div>
+            } @else if (filteredTableLabels.length === 0) {
+              <div class="picker-state">
+                No features match “{{ tableSearchQuery }}”.
+              </div>
+            } @else {
+              @for (
+                tableLabel of filteredTableLabels;
+                track tableLabel;
+                let optionIndex = $index
+              ) {
+                <button
+                  [id]="'audit-view-table-option-' + optionIndex"
+                  type="button"
+                  class="table-option"
+                  role="option"
+                  [attr.aria-selected]="selectedTableLabel === tableLabel"
+                  [class.table-option--selected]="
+                    selectedTableLabel === tableLabel
+                  "
+                  [class.table-option--active]="
+                    activeTableOptionIndex === optionIndex
+                  "
+                  (mouseenter)="setActiveTableOption(optionIndex)"
+                  (click)="selectTable(tableLabel)"
+                >
+                  <span class="table-initials">{{
+                    getTableInitials(tableLabel)
+                  }}</span>
+                  <span class="table-option-copy">
+                    <strong>{{ getTableDisplayName(tableLabel) }}</strong>
+                    <small>{{ tableLabel }}</small>
+                  </span>
+                  @if (selectedTableLabel === tableLabel) {
+                    <span class="current-selection">Current</span>
+                    <span class="selection-check" aria-hidden="true">✓</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="refresh-button"
+        [disabled]="areTableLabelsLoading || isRecordsLoading"
+        (click)="refresh()"
+      >
+        <span aria-hidden="true">↻</span>
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  @if (!selectedTableLabel) {
+    <section class="empty-selection" aria-live="polite">
+      <div class="empty-selection-icon" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="6"></circle>
+          <path d="m19 19-3.7-3.7"></path>
+        </svg>
+      </div>
+      <h1>Choose an audit feature</h1>
+      <p>
+        Search by feature name above. Records load only after you select a
+        feature.
+      </p>
+    </section>
+  } @else {
+    <section class="records-panel" aria-labelledby="records-title">
+      <header class="records-toolbar">
+        <h1 id="records-title">
+          <strong>{{ totalRecordCount }}</strong>
+          <span>{{ totalRecordLabel }}</span>
+        </h1>
+
+        <button
+          type="button"
+          class="filter-button"
+          [class.filter-button--active]="
+            isRecordFilterOpen || activeFilterCount > 0
+          "
+          (click)="toggleRecordFilters()"
+        >
+          <span aria-hidden="true">☷</span>
+          {{ isRecordFilterOpen ? "Hide filters" : "Filter records" }}
+          @if (!isRecordFilterOpen && activeFilterCount > 0) {
+            <small>{{ activeFilterCount }}</small>
+          }
+        </button>
+      </header>
+
+      @if (isRecordFilterOpen) {
+        <section class="filter-builder" aria-labelledby="filter-builder-title">
+          <div class="filter-builder-header">
+            <div>
+              <h2 id="filter-builder-title">Filter records</h2>
+              <p>
+                Build precise rules. Choose AND or OR independently for each
+                added rule.
+              </p>
+            </div>
+
+            <div class="filter-actions">
+              <button
+                type="button"
+                class="add-condition"
+                (click)="addFilterCondition()"
+              >
+                + Add condition
+              </button>
+              <button
+                type="button"
+                class="clear-filters"
+                (click)="clearFilters()"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-conditions">
+            @for (
+              condition of filterConditions;
+              track condition.id;
+              let conditionIndex = $index
+            ) {
+              <div class="filter-condition">
+                <div class="condition-join-cell">
+                  @if (conditionIndex === 0) {
+                    <strong class="condition-join">Where</strong>
+                  } @else {
+                    <div
+                      class="condition-join-toggle"
+                      role="group"
+                      [attr.aria-label]="
+                        'Join condition ' +
+                        (conditionIndex + 1) +
+                        ' with the previous rule'
+                      "
+                    >
+                      <button
+                        type="button"
+                        data-join="AND"
+                        [class.condition-join-option--active]="
+                          condition.join === 'AND'
+                        "
+                        [attr.aria-pressed]="condition.join === 'AND'"
+                        (click)="setFilterConditionJoin(condition, 'AND')"
+                      >
+                        AND
+                      </button>
+                      <button
+                        type="button"
+                        data-join="OR"
+                        [class.condition-join-option--active]="
+                          condition.join === 'OR'
+                        "
+                        [attr.aria-pressed]="condition.join === 'OR'"
+                        (click)="setFilterConditionJoin(condition, 'OR')"
+                      >
+                        OR
+                      </button>
+                    </div>
+                  }
+                </div>
+
+                <div
+                  class="filter-control filter-select filter-field"
+                  [class.filter-select--open]="
+                    isFilterFieldMenuOpen(condition.id)
+                  "
+                  (focusout)="onFilterFieldFocusOut(condition.id, $event)"
+                >
+                  <span class="control-label">Field</span>
+                  <button
+                    #fieldTrigger
+                    type="button"
+                    class="select-trigger field-trigger"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    [class.select-trigger--placeholder]="!condition.fieldKey"
+                    [attr.aria-label]="
+                      'Field: ' + getFilterFieldLabel(condition.fieldKey)
+                    "
+                    [attr.aria-expanded]="isFilterFieldMenuOpen(condition.id)"
+                    [attr.aria-controls]="
+                      'filter-field-options-' + condition.id
+                    "
+                    [attr.aria-activedescendant]="
+                      getActiveFilterFieldOptionId(condition.id)
+                    "
+                    (click)="toggleFilterFieldMenu(condition)"
+                    (keydown)="
+                      onFilterFieldKeydown(condition, $event, fieldTrigger)
+                    "
+                  >
+                    <span>{{ getFilterFieldLabel(condition.fieldKey) }}</span>
+                    <span
+                      class="select-caret"
+                      [class.select-caret--open]="
+                        isFilterFieldMenuOpen(condition.id)
+                      "
+                      aria-hidden="true"
+                    ></span>
+                  </button>
+
+                  @if (isFilterFieldMenuOpen(condition.id)) {
+                    <div
+                      [id]="'filter-field-options-' + condition.id"
+                      class="select-options field-options"
+                      role="listbox"
+                      [attr.aria-label]="
+                        'Fields for filter ' + (conditionIndex + 1)
+                      "
+                    >
+                      @for (
+                        field of filterFieldOptions;
+                        track field.key;
+                        let fieldIndex = $index
+                      ) {
+                        <button
+                          [id]="
+                            'filter-field-' + condition.id + '-' + fieldIndex
+                          "
+                          type="button"
+                          class="select-option field-option"
+                          role="option"
+                          tabindex="-1"
+                          [attr.data-field]="field.key"
+                          [attr.aria-selected]="
+                            condition.fieldKey === field.key
+                          "
+                          [class.select-option--selected]="
+                            condition.fieldKey === field.key
+                          "
+                          [class.select-option--active]="
+                            activeFieldOptionIndex === fieldIndex
+                          "
+                          (mouseenter)="setActiveFilterField(fieldIndex)"
+                          (click)="
+                            selectFilterField(
+                              condition,
+                              field.key,
+                              fieldTrigger
+                            )
+                          "
+                        >
+                          <span>{{ field.label }}</span>
+                          @if (condition.fieldKey === field.key) {
+                            <span class="select-check" aria-hidden="true"
+                              >✓</span
+                            >
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div
+                  class="filter-control filter-select filter-operator"
+                  [class.filter-select--open]="
+                    isFilterOperatorMenuOpen(condition.id)
+                  "
+                  (focusout)="onFilterOperatorFocusOut(condition.id, $event)"
+                >
+                  <span class="control-label">Condition</span>
+                  <button
+                    #operatorTrigger
+                    type="button"
+                    class="select-trigger operator-trigger"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    [attr.aria-label]="
+                      'Condition: ' + getFilterOperatorLabel(condition.operator)
+                    "
+                    [attr.aria-expanded]="
+                      isFilterOperatorMenuOpen(condition.id)
+                    "
+                    [attr.aria-controls]="
+                      'filter-operator-options-' + condition.id
+                    "
+                    [attr.aria-activedescendant]="
+                      getActiveFilterOperatorOptionId(condition.id)
+                    "
+                    (click)="toggleFilterOperatorMenu(condition)"
+                    (keydown)="
+                      onFilterOperatorKeydown(
+                        condition,
+                        $event,
+                        operatorTrigger
+                      )
+                    "
+                  >
+                    <span>{{
+                      getFilterOperatorLabel(condition.operator)
+                    }}</span>
+                    <span
+                      class="select-caret"
+                      [class.select-caret--open]="
+                        isFilterOperatorMenuOpen(condition.id)
+                      "
+                      aria-hidden="true"
+                    ></span>
+                  </button>
+
+                  @if (isFilterOperatorMenuOpen(condition.id)) {
+                    <div
+                      [id]="'filter-operator-options-' + condition.id"
+                      class="select-options operator-options"
+                      role="listbox"
+                      [attr.aria-label]="
+                        'Conditions for filter ' + (conditionIndex + 1)
+                      "
+                    >
+                      @for (
+                        operator of filterOperatorOptions;
+                        track operator.value;
+                        let operatorIndex = $index
+                      ) {
+                        <button
+                          [id]="
+                            'filter-operator-' +
+                            condition.id +
+                            '-' +
+                            operatorIndex
+                          "
+                          type="button"
+                          class="select-option operator-option"
+                          role="option"
+                          tabindex="-1"
+                          [attr.data-operator]="operator.value"
+                          [attr.aria-selected]="
+                            condition.operator === operator.value
+                          "
+                          [class.select-option--selected]="
+                            condition.operator === operator.value
+                          "
+                          [class.select-option--active]="
+                            activeOperatorOptionIndex === operatorIndex
+                          "
+                          (mouseenter)="setActiveFilterOperator(operatorIndex)"
+                          (click)="
+                            selectFilterOperator(
+                              condition,
+                              operator.value,
+                              operatorTrigger
+                            )
+                          "
+                        >
+                          <span>{{ operator.label }}</span>
+                          @if (condition.operator === operator.value) {
+                            <span class="select-check" aria-hidden="true"
+                              >✓</span
+                            >
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (hasFilterValueInput(condition)) {
+                  @if (isBooleanFilter(condition)) {
+                    <label class="filter-control filter-value">
+                      <span class="control-label">Value</span>
+                      <select
+                        [value]="condition.value"
+                        (change)="onFilterValueChange(condition, $event)"
+                      >
+                        <option value="">Select a value</option>
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    </label>
+                  } @else {
+                    <label class="filter-control filter-value">
+                      <span class="control-label">Value</span>
+                      <input
+                        [type]="getFilterInputType(condition)"
+                        [value]="condition.value"
+                        placeholder="Enter text, number, or date"
+                        (input)="onFilterValueChange(condition, $event)"
+                      />
+                    </label>
+                  }
+                } @else {
+                  <div class="filter-no-value">
+                    <span class="control-label">Value</span>
+                    <span>No value required</span>
+                  </div>
+                }
+
+                <button
+                  type="button"
+                  class="remove-condition"
+                  [attr.aria-label]="
+                    'Remove filter condition ' + (conditionIndex + 1)
+                  "
+                  (click)="removeFilterCondition(condition.id)"
+                >
+                  ×
+                </button>
+              </div>
+            }
+          </div>
+
+          <p class="filter-help">
+            Number and date fields support comparisons. Filters use source-table
+            fields and apply to the current API page. AND is evaluated before
+            OR.
+          </p>
+        </section>
+      }
+      @if (isRecordsLoading) {
+        <div class="panel-state" aria-live="polite">
+          <span class="loading-ring" aria-hidden="true"></span>
+          <strong>Loading audit records…</strong>
+        </div>
+      } @else if (recordsErrorMessage) {
+        <div class="panel-state panel-state--error" role="alert">
+          <strong>{{ recordsErrorMessage }}</strong>
+          <button type="button" (click)="loadAuditRecords()">Retry</button>
+        </div>
+      } @else if (filteredRows.length === 0) {
+        <div class="panel-state">
+          <strong>No matching records</strong>
+          <p>Change or clear the filter conditions to see more results.</p>
+        </div>
+      } @else {
+        <div class="records-table-wrap scroll-table-wrap">
+          <table class="records-table data-table">
+            <thead>
+              <tr>
+                <th scope="col"><span class="visually-hidden">Expand</span></th>
+                <th scope="col" [attr.aria-sort]="getAriaSort('ID')">
+                  <button
+                    type="button"
+                    class="sort-button"
+                    (click)="toggleSort('ID')"
+                  >
+                    ID
+                    <span class="sort-indicator" aria-hidden="true">
+                      {{ getSortIndicator("ID") }}
+                    </span>
+                  </button>
+                </th>
+                @for (column of columns; track column.key) {
+                  <th scope="col" [attr.aria-sort]="getAriaSort(column.key)">
+                    <button
+                      type="button"
+                      class="sort-button"
+                      (click)="toggleSort(column.key)"
+                    >
+                      {{ column.label }}
+                      <span class="sort-indicator" aria-hidden="true">
+                        {{ getSortIndicator(column.key) }}
+                      </span>
+                    </button>
+                  </th>
+                }
+                <th scope="col" [attr.aria-sort]="getAriaSort('__REVISIONS__')">
+                  <button
+                    type="button"
+                    class="sort-button"
+                    (click)="toggleSort('__REVISIONS__')"
+                  >
+                    Revisions
+                    <span class="sort-indicator" aria-hidden="true">
+                      {{ getSortIndicator("__REVISIONS__") }}
+                    </span>
+                  </button>
+                </th>
+                <th
+                  scope="col"
+                  [attr.aria-sort]="getAriaSort('__RECORD_STATE__')"
+                >
+                  <button
+                    type="button"
+                    class="sort-button"
+                    (click)="toggleSort('__RECORD_STATE__')"
+                  >
+                    Record state
+                    <span class="sort-indicator" aria-hidden="true">
+                      {{ getSortIndicator("__RECORD_STATE__") }}
+                    </span>
+                  </button>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filteredRows; track row.id) {
+                <tr
+                  class="record-row"
+                  [class.record-row--expandable]="canExpandRow(row)"
+                  [class.record-row--expanded]="isRowExpanded(row.id)"
+                  (click)="canExpandRow(row) && toggleRow(row.id)"
+                >
+                  <td>
+                    @if (canExpandRow(row)) {
+                      <button
+                        type="button"
+                        class="expand-button"
+                        [attr.aria-expanded]="isRowExpanded(row.id)"
+                        [attr.aria-label]="
+                          (isRowExpanded(row.id) ? 'Collapse' : 'Expand') +
+                          ' audit history for record ' +
+                          row.id
+                        "
+                        (click)="$event.stopPropagation(); toggleRow(row.id)"
+                      >
+                        <span [class.chevron--open]="isRowExpanded(row.id)"
+                          >⌄</span
+                        >
+                      </button>
+                    }
+                  </td>
+                  <td class="record-id">#{{ row.id }}</td>
+                  @for (column of columns; track column.key) {
+                    @let cellValue = getCellValue(row, column);
+                    <td>
+                      <span
+                        [class.code-value]="
+                          isCodeColumn(column.key) && cellValue !== null
+                        "
+                        [class.status-value]="
+                          isStatusColumn(column.key) && cellValue !== null
+                        "
+                        [class.empty-value]="cellValue === null"
+                      >
+                        {{ formatCellValue(cellValue) }}
+                      </span>
+                    </td>
+                  }
+                  <td>
+                    <span
+                      class="revision-count"
+                      [class.revision-count--muted]="row.revisionCount <= 1"
+                    >
+                      {{ row.revisionCount }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="record-state"
+                      [class.record-state--audit]="
+                        row.recordState === 'Audit only'
+                      "
+                    >
+                      <span aria-hidden="true"></span>
+                      {{ row.recordState }}
+                    </span>
+                  </td>
+                </tr>
+
+                @if (canExpandRow(row) && isRowExpanded(row.id)) {
+                  <tr class="history-row">
+                    <td [attr.colspan]="columns.length + 4">
+                      <div class="history-content">
+                        <header>
+                          <div>
+                            <strong>Audit history</strong>
+                            <span>
+                              {{ row.auditHistory.length }} revisions for record
+                              #{{ row.id }}
+                            </span>
+                          </div>
+                        </header>
+                        <div
+                          class="history-table-wrap scroll-table-wrap"
+                          role="region"
+                          tabindex="0"
+                          [attr.aria-label]="
+                            'Audit history for record ' + row.id
+                          "
+                        >
+                          <table class="history-table data-table">
+                            <thead>
+                              <tr>
+                                <th
+                                  scope="col"
+                                  [attr.aria-sort]="
+                                    getHistoryAriaSort('operation')
+                                  "
+                                >
+                                  <button
+                                    type="button"
+                                    class="sort-button"
+                                    (click)="toggleHistorySort('operation')"
+                                  >
+                                    Operation
+                                    <span
+                                      class="sort-indicator"
+                                      aria-hidden="true"
+                                    >
+                                      {{ getHistorySortIndicator("operation") }}
+                                    </span>
+                                  </button>
+                                </th>
+                                <th
+                                  scope="col"
+                                  [attr.aria-sort]="
+                                    getHistoryAriaSort('revision')
+                                  "
+                                >
+                                  <button
+                                    type="button"
+                                    class="sort-button"
+                                    (click)="toggleHistorySort('revision')"
+                                  >
+                                    Revision
+                                    <span
+                                      class="sort-indicator"
+                                      aria-hidden="true"
+                                    >
+                                      {{ getHistorySortIndicator("revision") }}
+                                    </span>
+                                  </button>
+                                </th>
+                                @for (
+                                  column of row.historyColumns;
+                                  track column.key
+                                ) {
+                                  <th
+                                    scope="col"
+                                    [attr.aria-sort]="
+                                      getHistoryAriaSort(column.key)
+                                    "
+                                  >
+                                    <button
+                                      type="button"
+                                      class="sort-button"
+                                      (click)="toggleHistorySort(column.key)"
+                                    >
+                                      {{ column.label }}
+                                      <span
+                                        class="sort-indicator"
+                                        aria-hidden="true"
+                                      >
+                                        {{
+                                          getHistorySortIndicator(column.key)
+                                        }}
+                                      </span>
+                                    </button>
+                                  </th>
+                                }
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (
+                                history of getSortedAuditHistory(row);
+                                track history.revision
+                              ) {
+                                <tr>
+                                  <td>
+                                    <span
+                                      class="operation-badge"
+                                      [class.operation-badge--update]="
+                                        history.operation === 'UPDATE'
+                                      "
+                                      [class.operation-badge--delete]="
+                                        history.operation === 'DELETE'
+                                      "
+                                    >
+                                      {{ history.operation }}
+                                    </span>
+                                  </td>
+                                  <td class="history-revision">
+                                    #{{ history.revision }}
+                                  </td>
+                                  @for (
+                                    column of row.historyColumns;
+                                    track column.key
+                                  ) {
+                                    @let historyValue =
+                                      getHistoryValue(history, column);
+                                    <td
+                                      [class.null-value]="historyValue === null"
+                                    >
+                                      {{ formatCellValue(historyValue, true) }}
+                                    </td>
+                                  }
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <footer class="records-footer">
+        <strong>
+          {{ recordsResponse?.data?.totalElements ?? 0 }} records across
+          {{ recordsResponse?.data?.totalPages ?? 0 }} pages
+        </strong>
+
+        <div class="pagination">
+          <label for="items-per-page">Items per page:</label>
+          <select
+            id="items-per-page"
+            [value]="itemsPerPage"
+            [disabled]="isRecordsLoading"
+            (change)="onItemsPerPageChange($event)"
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span>
+            {{ currentPageStart }} – {{ currentPageEnd }} of
+            {{ recordsResponse?.data?.totalElements ?? 0 }}
+          </span>
+          <div class="page-buttons" aria-label="Pagination">
+            <button
+              type="button"
+              [disabled]="currentPageNo === 0 || isRecordsLoading"
+              aria-label="First page"
+              (click)="goToPage(0)"
+            >
+              |‹
+            </button>
+            <button
+              type="button"
+              [disabled]="currentPageNo === 0 || isRecordsLoading"
+              aria-label="Previous page"
+              (click)="goToPage(currentPageNo - 1)"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
+              aria-label="Next page"
+              (click)="goToPage(currentPageNo + 1)"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              [disabled]="currentPageNo >= lastPageNo || isRecordsLoading"
+              aria-label="Last page"
+              (click)="goToPage(lastPageNo)"
+            >
+              ›|
+            </button>
+          </div>
+        </div>
+      </footer>
+    </section>
+  }
+</main>

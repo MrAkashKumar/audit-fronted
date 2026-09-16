@@ -34,7 +34,7 @@ public/data/audit-records-loco-singapore.json
 
 ```text
 Browser
-  └── AuditView
+  └── AuditViewComponent
       ├── subscribes to getAuditTableLabels()
       │   └── GET /api/v1/audit/allTable
       └── subscribes to getAuditRecords(label, pageNo, pageSize)
@@ -49,7 +49,7 @@ failed request into successful local data.
 
 ## Component responsibility
 
-`AuditView` explicitly subscribes to both service methods, cancels stale subscriptions, updates
+`AuditViewComponent` explicitly subscribes to both service methods, cancels stale subscriptions, updates
 loading/success/error state, derives columns from the returned rows, and trusts the server's
 pagination metadata.
 
@@ -62,10 +62,10 @@ src/app/features/audit/
 │   ├── audit-table-label.model.ts
 │   └── audit-view.model.ts
 ├── pages/audit-view/
-│   ├── audit-view.ts
-│   ├── audit-view.html
-│   ├── audit-view.css
-│   └── audit-view.spec.ts
+│   ├── audit-view.component.ts
+│   ├── audit-view.component.html
+│   ├── audit-view.component.css
+│   └── audit-view.component.spec.ts
 └── services/
     ├── audit.service.ts
     └── audit.service.spec.ts

@@ -6,13 +6,13 @@ The audit feature is a lazy-loaded, standalone Angular feature at `/audit`.
 
 ```mermaid
 flowchart LR
-    Router --> AuditView
-    AuditView -->|subscribe| AuditService
+    Router --> AuditViewComponent
+    AuditViewComponent -->|subscribe| AuditService
     AuditService -->|GET /api/v1/audit/allTable| Backend
     AuditService -->|GET /api/v1/audit/label?pageNo&pageSize| Backend
-    Backend -->|typed Observable response| AuditView
-    AuditView --> Selector
-    AuditView --> DynamicTable
+    Backend -->|typed Observable response| AuditViewComponent
+    AuditViewComponent --> Selector
+    AuditViewComponent --> DynamicTable
     DynamicTable --> HistoryTable
 ```
 
@@ -27,7 +27,7 @@ flowchart LR
 - Returns typed, cold HttpClient Observables.
 - Propagates HTTP errors.
 
-### AuditView
+### AuditViewComponent
 
 - Subscribes explicitly to label and record requests.
 - Unsubscribes before replacing an in-flight request and on destroy.
@@ -47,7 +47,7 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant User
-    participant View as AuditView
+    participant View as AuditViewComponent
     participant Service as AuditService
     participant API as Audit API
 
@@ -81,4 +81,6 @@ schemas, so new backend tables work without a new component.
 ## Styling
 
 Global `src/styles.css` contains only Tailwind import, base page colors, and scrollbar styling.
-All audit presentation rules live in `audit-view.css` under Angular component encapsulation.
+All audit presentation rules live in `audit-view.component.css` under Angular component encapsulation.
+The Angular component schematic is configured with `type: component`, so future generated components
+use the `.component.ts`, `.component.html`, `.component.css`, and `.component.spec.ts` convention.

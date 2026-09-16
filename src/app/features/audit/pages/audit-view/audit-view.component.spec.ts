@@ -8,7 +8,7 @@ import {
   DynamicAuditApiResponse,
 } from "../../models/audit-view.model";
 import { AuditService } from "../../services/audit.service";
-import { AuditView } from "./audit-view";
+import { AuditViewComponent } from "./audit-view.component";
 
 interface AuditRecordRequest {
   tableLabel: string;
@@ -89,7 +89,7 @@ const createRecordsResponse = (
   },
 });
 
-describe("AuditView", () => {
+describe("AuditViewComponent", () => {
   let labelRequests: number;
   let recordRequests: AuditRecordRequest[];
   let labelsResponseOverride: Observable<AuditTableLabelsApiResponse> | null;
@@ -102,7 +102,7 @@ describe("AuditView", () => {
     recordsResponseOverride = null;
 
     await TestBed.configureTestingModule({
-      imports: [AuditView],
+      imports: [AuditViewComponent],
       providers: [
         provideZonelessChangeDetection(),
         {
@@ -129,15 +129,17 @@ describe("AuditView", () => {
     }).compileComponents();
   });
 
-  async function createFixture(): Promise<ComponentFixture<AuditView>> {
-    const fixture = TestBed.createComponent(AuditView);
+  async function createFixture(): Promise<
+    ComponentFixture<AuditViewComponent>
+  > {
+    const fixture = TestBed.createComponent(AuditViewComponent);
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture;
   }
 
   async function selectTable(
-    fixture: ComponentFixture<AuditView>,
+    fixture: ComponentFixture<AuditViewComponent>,
     tableLabel: string,
   ): Promise<void> {
     const component = fixture.componentInstance;
@@ -155,7 +157,7 @@ describe("AuditView", () => {
     expect(component.tableLabels).toEqual(labelsResponse.data.tableLabels);
     expect(recordRequests).toEqual([]);
     expect(element.querySelector(".empty-selection")?.textContent).toContain(
-      "Choose an audit table",
+      "Choose an audit feature",
     );
   });
 
@@ -243,6 +245,82 @@ describe("AuditView", () => {
     });
   });
 
+  it("cycles sorting for ID, every dynamic column, revisions, and record state", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+
+    const sortableKeys = [
+      "ID",
+      ...component.columns.map((column) => column.key),
+      "__REVISIONS__",
+      "__RECORD_STATE__",
+    ];
+
+    for (const key of sortableKeys) {
+      expect(component.getSortIndicator(key)).toBe("↕");
+
+      component.toggleSort(key);
+      expect(component.sortKey).toBe(key);
+      expect(component.sortDirection).toBe("asc");
+      expect(component.getSortIndicator(key)).toBe("↑");
+
+      component.toggleSort(key);
+      expect(component.sortDirection).toBe("desc");
+      expect(component.getSortIndicator(key)).toBe("↓");
+
+      component.toggleSort(key);
+      expect(component.sortKey).toBe("");
+      expect(component.sortDirection).toBe("");
+    }
+  });
+
+  it("sorts operation, revision, and every dynamic audit-history column", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    const row = component.rows[0];
+    const originalRevisions = row.auditHistory.map((item) => item.revision);
+
+    component.toggleHistorySort("revision");
+    expect(
+      component.getSortedAuditHistory(row).map((item) => item.revision),
+    ).toEqual([9401, 9450]);
+    expect(component.getHistoryAriaSort("revision")).toBe("ascending");
+
+    component.toggleHistorySort("revision");
+    expect(
+      component.getSortedAuditHistory(row).map((item) => item.revision),
+    ).toEqual([9450, 9401]);
+    expect(component.getHistorySortIndicator("revision")).toBe("↓");
+
+    component.toggleHistorySort("revision");
+    expect(component.getHistorySortIndicator("revision")).toBe("↕");
+
+    for (const key of [
+      "operation",
+      ...row.historyColumns.map((column) => column.key),
+    ]) {
+      component.toggleHistorySort(key);
+      expect(component.historySortKey).toBe(key);
+      expect(component.historySortDirection).toBe("asc");
+      component.toggleHistorySort(key);
+      expect(component.historySortDirection).toBe("desc");
+      component.toggleHistorySort(key);
+    }
+
+    expect(row.auditHistory.map((item) => item.revision)).toEqual(
+      originalRevisions,
+    );
+
+    component.toggleHistorySort("revision");
+    await selectTable(fixture, "Position-Balance");
+    expect(component.historySortKey).toBe("");
+    expect(component.historySortDirection).toBe("");
+  });
+
   it("keeps every added AND or OR join independent", async () => {
     const fixture = await createFixture();
     const component = fixture.componentInstance;
@@ -256,6 +334,27 @@ describe("AuditView", () => {
     expect(
       component.filterConditions.map((condition) => condition.join),
     ).toEqual(["AND", "OR", "AND"]);
+  });
+
+  it("uses consistent visible labels for every filter control", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    const element = fixture.nativeElement as HTMLElement;
+
+    await selectTable(fixture, "Loco-Singapore");
+    component.toggleRecordFilters();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    expect(
+      Array.from(element.querySelectorAll(".control-label"), (label) =>
+        label.textContent?.trim(),
+      ),
+    ).toEqual(["Field", "Condition", "Value"]);
+    expect(
+      element.querySelector<HTMLInputElement>(".filter-value input")
+        ?.placeholder,
+    ).toBe("Enter text, number, or date");
   });
 
   it("filters with source fields only", async () => {
@@ -287,7 +386,7 @@ describe("AuditView", () => {
 
     expect(component.tableLabels).toEqual([]);
     expect(component.tableLabelsErrorMessage).toBe(
-      "Unable to load audit tables.",
+      "Unable to load audit features.",
     );
     expect(component.areTableLabelsLoading).toBe(false);
   });
@@ -311,7 +410,7 @@ describe("AuditView", () => {
     ).toContain("Retry");
   });
 
-  it("refreshes table labels and returns to the choose-table state", async () => {
+  it("refreshes feature labels and returns to the choose-feature state", async () => {
     const fixture = await createFixture();
     const component = fixture.componentInstance;
 
@@ -323,6 +422,6 @@ describe("AuditView", () => {
     expect(component.selectedTableLabel).toBe("");
     expect(component.recordsResponse).toBeNull();
     expect(component.filterConditions).toEqual([]);
-    expect(document.title).toBe("Audit tables | Audit Frontend");
+    expect(document.title).toBe("Audit features | Audit Frontend");
   });
 });

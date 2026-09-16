@@ -20,7 +20,7 @@ Requirements:
 9. Implement independent AND/OR joins, typed filter operators, sorting, expandable history,
    horizontal history scrolling, and server-driven pagination.
 10. Refresh must clear selection and reload `/api/v1/audit/allTable`.
-11. Put audit presentation rules in `audit-view.css`; keep global CSS limited to application-wide
+11. Put audit presentation rules in `audit-view.component.css`; keep global CSS limited to application-wide
     rules.
 12. Add service tests for exact URLs, encoded labels, dynamic/default pagination, normalization,
     cold Observables, and HTTP error propagation with no secondary request.
