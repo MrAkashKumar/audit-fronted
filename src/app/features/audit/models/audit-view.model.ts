@@ -36,8 +36,15 @@ export interface DynamicAuditRecord {
   id: string | number;
   originalRecordPresent: boolean;
   originalData: DynamicAuditData | null;
+  approval: AuditApprovalDetails;
   changeSummary: DynamicChangeSummary;
   auditHistory: DynamicAuditHistoryEntry[];
+}
+
+export interface AuditApprovalDetails {
+  approvalRecordPresent: boolean;
+  makerUsername: string | null;
+  checkerUsername: string | null;
 }
 
 export interface DynamicChangeSummary {
@@ -79,6 +86,7 @@ export interface AuditFilterOperatorOption {
 export interface AuditViewRow {
   id: string | number;
   values: DynamicAuditData;
+  approval: AuditApprovalDetails;
   revisionCount: number;
   recordState: AuditRecordState;
   auditHistory: DynamicAuditHistoryEntry[];

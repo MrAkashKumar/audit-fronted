@@ -64,8 +64,15 @@ interface DynamicAuditRecord {
   id: string | number;
   originalRecordPresent: boolean;
   originalData: Record<string, string | number | boolean | null> | null;
+  approval: AuditApprovalDetails;
   changeSummary: DynamicChangeSummary;
   auditHistory: DynamicAuditHistoryEntry[];
+}
+
+interface AuditApprovalDetails {
+  approvalRecordPresent: boolean;
+  makerUsername: string | null;
+  checkerUsername: string | null;
 }
 
 interface DynamicChangeSummary {
@@ -94,6 +101,12 @@ interface DynamicAuditHistoryEntry {
   generated list because `id` already renders in the dedicated ID column.
 - `changeSummary.totalRevisions` supplies the revision badge.
 - `originalRecordPresent` supplies Current/Audit only state.
+- `approval` supplies the fixed Approval present, Maker, and Checker columns in the main source
+  table only. It is not added to dynamic source filters or expanded audit history.
+- `approvalRecordPresent: false` renders Not present with empty Maker and Checker values. When it is
+  true, the supplied usernames render independently, so a missing checker remains an em dash.
+- These three fields do not distinguish an Approved outcome from a Rejected outcome. The UI does
+  not guess; an explicit backend outcome field would be required to display that distinction.
 - `auditHistory` supplies the expandable history table.
 - `operation` and `revision` have dedicated history columns.
 - Technical keys such as `REV`, `REVTYPE`, and `revisionTypeCode` are excluded from the dynamic

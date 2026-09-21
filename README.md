@@ -67,6 +67,10 @@ data
     ├── id
     ├── originalRecordPresent
     ├── originalData
+    ├── approval
+    │   ├── approvalRecordPresent
+    │   ├── makerUsername
+    │   └── checkerUsername
     ├── changeSummary
     └── auditHistory[]
 ```
@@ -88,6 +92,7 @@ User selects a label
   → component subscribes
   → response metadata drives pagination
   → originalData drives the main schema and filter fields
+  → approval drives fixed main-table approval details
   → auditHistory drives each expanded history schema
 ```
 

@@ -34,6 +34,7 @@ flowchart LR
 - Owns loading, success, error, selection, filter, sort, expansion, and pagination state.
 - Uses server pagination metadata as authoritative.
 - Derives source columns from `originalData`.
+- Maps `approval` to fixed main-table Approval present, Maker, and Checker columns.
 - Derives history columns from each row's `auditHistory`.
 - Exposes only source columns to the filter builder.
 
@@ -89,6 +90,10 @@ inside `originalData`. A feature selection starts a fresh schema union, so new b
 without table-specific component code while sparse fields remain available during pagination. A
 failed page request clears visible rows but preserves the same-feature schema union so an exact
 retry cannot discard fields learned from earlier pages.
+
+Approval metadata is separate from the dynamic source schema. Every main row renders the response's
+`approvalRecordPresent`, `makerUsername`, and `checkerUsername` values, while filters remain limited
+to `originalData` and expanded history remains limited to `auditHistory`.
 
 Changed history values are derived from the response rather than stored in the view model. Entries
 are ordered by `sequenceNumber`, then `revision`; every dynamic value is compared with the prior

@@ -55,6 +55,11 @@ const createRecordsResponse = (
           DEPOT_CODE: "TJS",
           FLEET_STATUS: "AVAILABLE",
         },
+        approval: {
+          approvalRecordPresent: true,
+          makerUsername: "position.maker",
+          checkerUsername: "position.checker",
+        },
         changeSummary: {
           totalRevisions: 2,
           insertCount: 1,
@@ -732,6 +737,83 @@ describe("AuditViewComponent", () => {
 
     expect(component.isRecordsLoading).toBe(false);
     expect(component.rows).toHaveLength(1);
+  });
+
+  it("renders and sorts approval metadata only in the main source table", async () => {
+    const response = createRecordsResponse();
+    const baseRecord = response.data.rows[0];
+    response.data.rows = [
+      {
+        ...structuredClone(baseRecord),
+        id: 1001,
+        originalData: { ID: 1001, NAME: "No approval" },
+        approval: {
+          approvalRecordPresent: false,
+          makerUsername: null,
+          checkerUsername: null,
+        },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 1002,
+        originalData: { ID: 1002, NAME: "Pending" },
+        approval: {
+          approvalRecordPresent: true,
+          makerUsername: "maker.user",
+          checkerUsername: null,
+        },
+      },
+      {
+        ...structuredClone(baseRecord),
+        id: 1003,
+        originalData: { ID: 1003, NAME: "Reviewed" },
+        approval: {
+          approvalRecordPresent: true,
+          makerUsername: "position.maker",
+          checkerUsername: "position.checker",
+        },
+      },
+    ];
+    response.data.numberOfElements = 3;
+    response.data.totalElements = 3;
+    response.data.totalPages = 1;
+    recordsResponseOverride = of(response);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Position-Balance");
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(
+      Array.from(element.querySelectorAll(".approval-present")).map((cell) =>
+        cell.textContent?.trim(),
+      ),
+    ).toEqual(["Not present", "Present", "Present"]);
+    expect(
+      Array.from(element.querySelectorAll(".approval-maker")).map((cell) =>
+        cell.textContent?.trim(),
+      ),
+    ).toEqual(["—", "maker.user", "position.maker"]);
+    expect(
+      Array.from(element.querySelectorAll(".approval-checker")).map((cell) =>
+        cell.textContent?.trim(),
+      ),
+    ).toEqual(["—", "—", "position.checker"]);
+    expect(component.filterFields.map((field) => field.key)).not.toContain(
+      "approval",
+    );
+    expect(
+      component.rows[0]?.historyColumns.map((column) => column.key),
+    ).not.toContain("approval");
+
+    component.toggleSort("__APPROVAL_PRESENT__");
+    expect(component.filteredRows.map((row) => row.id)).toEqual([
+      1001, 1002, 1003,
+    ]);
+    component.toggleSort("__APPROVAL_CHECKER__");
+    expect(component.filteredRows.map((row) => row.id)).toEqual([
+      1003, 1001, 1002,
+    ]);
   });
 
   it("retries the exact failed page and page size", async () => {

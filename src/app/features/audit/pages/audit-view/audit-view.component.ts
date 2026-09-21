@@ -35,6 +35,9 @@ interface AuditRecordsRequest {
 }
 
 const SORT_ID = "ID";
+const SORT_APPROVAL_PRESENT = "__APPROVAL_PRESENT__";
+const SORT_APPROVAL_MAKER = "__APPROVAL_MAKER__";
+const SORT_APPROVAL_CHECKER = "__APPROVAL_CHECKER__";
 const SORT_REVISIONS = "__REVISIONS__";
 const SORT_RECORD_STATE = "__RECORD_STATE__";
 const POTENTIALLY_TRUNCATED_LENGTH = 24;
@@ -1291,6 +1294,18 @@ export class AuditViewComponent implements OnInit, OnDestroy {
       return row.revisionCount;
     }
 
+    if (key === SORT_APPROVAL_PRESENT) {
+      return row.approval.approvalRecordPresent;
+    }
+
+    if (key === SORT_APPROVAL_MAKER) {
+      return row.approval.makerUsername;
+    }
+
+    if (key === SORT_APPROVAL_CHECKER) {
+      return row.approval.checkerUsername;
+    }
+
     if (key === SORT_RECORD_STATE) {
       return row.recordState;
     }
@@ -1510,6 +1525,7 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     return {
       id: record.id,
       values: record.originalData ?? {},
+      approval: record.approval,
       revisionCount: record.changeSummary.totalRevisions,
       recordState: record.originalRecordPresent ? "Current" : "Audit only",
       auditHistory: record.auditHistory,
