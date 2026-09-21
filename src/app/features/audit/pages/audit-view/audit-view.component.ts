@@ -35,7 +35,6 @@ interface AuditRecordsRequest {
 }
 
 const SORT_ID = "ID";
-const SORT_APPROVAL_PRESENT = "__APPROVAL_PRESENT__";
 const SORT_APPROVAL_MAKER = "__APPROVAL_MAKER__";
 const SORT_APPROVAL_CHECKER = "__APPROVAL_CHECKER__";
 const SORT_REVISIONS = "__REVISIONS__";
@@ -1292,10 +1291,6 @@ export class AuditViewComponent implements OnInit, OnDestroy {
 
     if (key === SORT_REVISIONS) {
       return row.revisionCount;
-    }
-
-    if (key === SORT_APPROVAL_PRESENT) {
-      return row.approval.approvalRecordPresent;
     }
 
     if (key === SORT_APPROVAL_MAKER) {

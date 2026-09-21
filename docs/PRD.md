@@ -13,7 +13,7 @@ each selected table's current records and revision history without table-specifi
 4. On selection, call
    `GET /api/v1/audit/{encodedLabel}?pageNo=0&pageSize={selectedSize}`.
 5. Rebuild main and history schemas from the selected response.
-6. Show approval presence, maker, and checker metadata in the main source table only.
+6. Show maker and checker metadata in the main source table only.
 7. Keep filters limited to source fields from `originalData`.
 8. Allow independent AND/OR joins for added filter conditions.
 9. Keep server pagination dynamic and reset to page zero when page size changes.
@@ -28,7 +28,7 @@ business-envelope `status` or `code`.
 
 ## Dynamic-table requirements
 
-- ID, approval details, revision count, and record state are fixed semantic columns.
+- ID, Maker, Checker, revision count, and record state are fixed semantic columns.
 - Other main columns come from `originalData`.
 - History columns come from `auditHistory` and may differ per table or record.
 - Create/update metadata columns are hidden from expanded history only; matching source columns

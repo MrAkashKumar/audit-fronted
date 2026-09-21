@@ -694,24 +694,6 @@
                 }
                 <th
                   scope="col"
-                  [attr.aria-sort]="getAriaSort('__APPROVAL_PRESENT__')"
-                >
-                  <button
-                    type="button"
-                    class="sort-button"
-                    (click)="toggleSort('__APPROVAL_PRESENT__')"
-                  >
-                    Approval present
-                    <span class="sort-indicator" aria-hidden="true">
-                      <svg viewBox="0 0 12 16">
-                        <path class="sort-up" d="m6 1 4 5H2z"></path>
-                        <path class="sort-down" d="m6 15-4-5h8z"></path>
-                      </svg>
-                    </span>
-                  </button>
-                </th>
-                <th
-                  scope="col"
                   [attr.aria-sort]="getAriaSort('__APPROVAL_MAKER__')"
                 >
                   <button
@@ -851,26 +833,6 @@
                       </span>
                     </td>
                   }
-                  <td class="approval-present">
-                    <span
-                      class="record-state"
-                      [class.record-state--audit]="
-                        !row.approval.approvalRecordPresent
-                      "
-                      [attr.aria-label]="
-                        row.approval.approvalRecordPresent
-                          ? 'Approval record present'
-                          : 'Approval record not present'
-                      "
-                    >
-                      <span aria-hidden="true"></span>
-                      {{
-                        row.approval.approvalRecordPresent
-                          ? "Present"
-                          : "Not present"
-                      }}
-                    </span>
-                  </td>
                   <td class="approval-maker">
                     <span
                       class="cell-value"
@@ -938,7 +900,7 @@
 
                 @if (canExpandRow(row) && isRowExpanded(row.id)) {
                   <tr class="history-row">
-                    <td [attr.colspan]="columns.length + 7">
+                    <td [attr.colspan]="columns.length + 6">
                       <div class="history-content">
                         <header
                           class="mb-[0.7rem] flex items-center justify-between gap-4"

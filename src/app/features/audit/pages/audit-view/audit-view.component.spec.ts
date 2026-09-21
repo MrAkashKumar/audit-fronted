@@ -739,7 +739,7 @@ describe("AuditViewComponent", () => {
     expect(component.rows).toHaveLength(1);
   });
 
-  it("renders and sorts approval metadata only in the main source table", async () => {
+  it("renders and sorts maker and checker only in the main source table", async () => {
     const response = createRecordsResponse();
     const baseRecord = response.data.rows[0];
     response.data.rows = [
@@ -784,11 +784,8 @@ describe("AuditViewComponent", () => {
     await selectTable(fixture, "Position-Balance");
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(
-      Array.from(element.querySelectorAll(".approval-present")).map((cell) =>
-        cell.textContent?.trim(),
-      ),
-    ).toEqual(["Not present", "Present", "Present"]);
+    expect(element.textContent).not.toContain("Approval present");
+    expect(element.textContent).not.toContain("Not present");
     expect(
       Array.from(element.querySelectorAll(".approval-maker")).map((cell) =>
         cell.textContent?.trim(),
@@ -806,10 +803,6 @@ describe("AuditViewComponent", () => {
       component.rows[0]?.historyColumns.map((column) => column.key),
     ).not.toContain("approval");
 
-    component.toggleSort("__APPROVAL_PRESENT__");
-    expect(component.filteredRows.map((row) => row.id)).toEqual([
-      1001, 1002, 1003,
-    ]);
     component.toggleSort("__APPROVAL_CHECKER__");
     expect(component.filteredRows.map((row) => row.id)).toEqual([
       1003, 1001, 1002,

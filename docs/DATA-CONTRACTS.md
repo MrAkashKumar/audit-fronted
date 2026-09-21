@@ -101,10 +101,10 @@ interface DynamicAuditHistoryEntry {
   generated list because `id` already renders in the dedicated ID column.
 - `changeSummary.totalRevisions` supplies the revision badge.
 - `originalRecordPresent` supplies Current/Audit only state.
-- `approval` supplies the fixed Approval present, Maker, and Checker columns in the main source
-  table only. It is not added to dynamic source filters or expanded audit history.
-- `approvalRecordPresent: false` renders Not present with empty Maker and Checker values. When it is
-  true, the supplied usernames render independently, so a missing checker remains an em dash.
+- `approval` supplies the fixed Maker and Checker columns in the main source table only. It is not
+  added to dynamic source filters or expanded audit history.
+- `approvalRecordPresent` remains part of the typed backend contract but is not rendered as a UI
+  column. Null Maker or Checker usernames render as an em dash.
 - These three fields do not distinguish an Approved outcome from a Rejected outcome. The UI does
   not guess; an explicit backend outcome field would be required to display that distinction.
 - `auditHistory` supplies the expandable history table.
