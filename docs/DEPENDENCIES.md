@@ -9,7 +9,7 @@ This audit answers four questions:
 3. Which packages are build/test tooling?
 4. Are any declarations duplicated or currently unused?
 
-This combines a local manifest/source-usage review with an npm registry vulnerability audit performed on 2026-09-15.
+This combines a local manifest/source-usage review with an npm registry vulnerability audit performed on 2026-09-21.
 
 ## Environment scanned
 
@@ -44,25 +44,25 @@ npm run build
 | @angular/platform-browser | ^21.2.0        |   21.2.23 | Yes                      | bootstrapApplication                                                   |
 | @angular/router           | ^21.2.0        |   21.2.23 | Yes                      | Root and lazy audit routes                                             |
 | @angular/compiler         | ^21.2.0        |   21.2.23 | Keep                     | Standard Angular application dependency/toolchain compatibility        |
+| @angular/forms            | ^21.2.0        |   21.2.23 | Retained                 | Existing Angular forms dependency remains available                    |
 | rxjs                      | ~7.8.0         |     7.8.2 | Yes                      | Observable responses and explicit subscribe flows                      |
+| tailwindcss               | ^4.3.2         |     4.3.3 | Build-time use           | Existing Tailwind dependency declaration remains unchanged             |
 | tslib                     | ^2.3.0         |     2.8.1 | Yes                      | TypeScript runtime helpers used by Angular output                      |
-| tailwindcss               | ^4.3.2         |     4.3.3 | Build-time use           | Global import plus reusable audit-view template utilities              |
-| @angular/forms            | ^21.2.0        |   21.2.23 | Not currently imported   | Native value/change/input bindings implement the current filters       |
 
 ## Development dependencies
 
-| Package               | Manifest range | Installed | Purpose                                          |
-| --------------------- | -------------- | --------: | ------------------------------------------------ |
-| @angular/build        | ^21.2.1        |   21.2.24 | Application and test builders                    |
-| @angular/cli          | ^21.2.1        |   21.2.24 | ng commands, serve, build, test, scaffolding     |
-| @angular/compiler-cli | ^21.2.0        |   21.2.23 | Angular template/AOT compilation                 |
-| typescript            | ~5.9.2         |     5.9.3 | Type checking and compilation                    |
-| vitest                | ^4.0.8         |    4.1.11 | Unit and interaction test runner                 |
-| jsdom                 | ^28.0.0        |    28.1.0 | Browser-like DOM for tests                       |
-| prettier              | ^3.8.1         |     3.9.6 | Code and documentation formatting                |
-| postcss               | ^8.5.3         |    8.5.28 | CSS processing                                   |
-| @tailwindcss/postcss  | ^4.1.12        |     4.3.3 | Tailwind/PostCSS integration                     |
-| tailwindcss           | ^4.1.12        |     4.3.3 | CSS build tooling; also declared in dependencies |
+| Package               | Manifest range | Installed | Purpose                                                      |
+| --------------------- | -------------- | --------: | ------------------------------------------------------------ |
+| @angular/build        | ^21.2.1        |   21.2.24 | Application and test builders                                |
+| @angular/cli          | ^21.2.1        |   21.2.24 | ng commands, serve, build, test, scaffolding                 |
+| @angular/compiler-cli | ^21.2.0        |   21.2.23 | Angular template/AOT compilation                             |
+| typescript            | ~5.9.2         |     5.9.3 | Type checking and compilation                                |
+| vitest                | ^4.0.8         |    4.1.11 | Unit and interaction test runner                             |
+| jsdom                 | ^28.0.0        |    28.1.0 | Browser-like DOM for tests                                   |
+| prettier              | ^3.8.1         |     3.9.6 | Code and documentation formatting                            |
+| postcss               | ^8.5.3         |    8.5.28 | CSS processing                                               |
+| @tailwindcss/postcss  | ^4.1.12        |     4.3.3 | Tailwind/PostCSS integration                                 |
+| tailwindcss           | ^4.1.12        |     4.3.3 | CSS build tooling and reusable audit-view template utilities |
 
 ## What this feature imports directly
 
@@ -92,38 +92,21 @@ Every implemented requirement is covered by the existing stack:
 - Tests: Angular builder, Vitest, and jsdom.
 - Production data access: Angular HttpClient and RxJS only; no mock-data or fixture dependency.
 
-### 2. Tailwind is declared twice
+### 2. Existing dependency declarations are preserved
 
-tailwindcss appears in both dependencies and devDependencies with different declared ranges:
+`@angular/forms` remains available even though the current audit component uses native value and
+event bindings. Tailwind also remains in the supplied dependency locations. The UI refactor does
+not remove or reorganize project dependencies, so other application work is not affected.
 
-- dependencies: ^4.3.2
-- devDependencies: ^4.1.12
-- installed resolution: 4.3.3
-
-The build currently succeeds. For a future cleanup, keep one aligned declaration—normally in devDependencies when Tailwind is only a build tool—and regenerate package-lock.json with npm install. This documentation task intentionally does not alter the previously supplied dependency set.
-
-### 3. Angular Forms is currently unused
-
-@angular/forms is installed but no FormsModule, ReactiveFormsModule, FormControl, or FormGroup import exists in application source.
-
-It can remain because it was part of the supplied dependency set and may be useful if the filter builder later moves to reactive forms. The present implementation does not require it.
-
-### 4. npm reports two extraneous installed packages
-
-npm ls --depth=0 reports:
-
-- @napi-rs/wasm-runtime 1.2.4
-- @tybys/wasm-util 0.10.4
-
-They are present in node_modules but not declared as project-level dependencies. They may be artifacts of optional/native tooling installation. A future maintenance pass can run npm prune after confirming no local workflow depends on them. They are not imported by the application.
-
-### 5. Installed patch versions are newer than manifest baselines
+### 3. Installed patch versions are newer than manifest baselines
 
 Caret and tilde ranges allow npm to install compatible newer versions. The project currently resolves Angular 21.2.23/24, TypeScript 5.9.3, and Vitest 4.1.11 while retaining the original ranges in package.json.
 
-package-lock.json remains the reproducible source for npm ci.
+The repository currently ignores `package-lock.json`, so clean environments install from the
+declared `package.json` ranges. If the delivery process adopts `npm ci`, remove that ignore rule and
+commit a generated lockfile first.
 
-### 6. Registry vulnerability audit is clean
+### 4. Registry vulnerability audit is clean
 
 npm audit reported zero known vulnerabilities in the current lockfile dependency graph:
 
@@ -136,9 +119,9 @@ npm audit reported zero known vulnerabilities in the current lockfile dependency
 | Critical |     0 |
 | Total    |     0 |
 
-The npm report counted 603 packages across production, development, and optional dependency relationships. This result is a time-specific registry result, so CI should continue running the organization's approved dependency scanner.
+The npm report counted 481 packages across production, development, and optional dependency relationships. This result is a time-specific registry result, so CI should continue running the organization's approved dependency scanner.
 
-### 7. Tailwind is active without another installation
+### 5. Tailwind is active without another installation
 
 `.postcssrc.json` connects the already-installed `@tailwindcss/postcss` plugin to the Angular build.
 The unchanged global `src/styles.css` import supplies Tailwind, and straightforward layout,
@@ -149,32 +132,30 @@ those rules are clearer and safer as feature-specific CSS.
 
 ## Dependency decision matrix
 
-| Proposed addition        | Decision          | Reason                                                                   |
-| ------------------------ | ----------------- | ------------------------------------------------------------------------ |
-| Angular Material/CDK     | Do not add        | Native controls and scoped CSS already meet the design                   |
-| AG Grid or another grid  | Do not add        | Dynamic tables, expansion, and paging are already implemented            |
-| Lodash                   | Do not add        | Native arrays, sets, maps, and string APIs are sufficient                |
-| Moment/date-fns          | Do not add        | ISO dates are handled with Date.parse and DatePipe                       |
-| State-management library | Do not add        | Feature state is local and bounded                                       |
-| Icon library             | Do not add        | Existing inline icons and text controls are sufficient                   |
-| Reactive forms package   | Already available | @angular/forms is installed but not needed by the current implementation |
+| Proposed addition        | Decision   | Reason                                                        |
+| ------------------------ | ---------- | ------------------------------------------------------------- |
+| Angular Material/CDK     | Do not add | Native controls and scoped CSS already meet the design        |
+| AG Grid or another grid  | Do not add | Dynamic tables, expansion, and paging are already implemented |
+| Lodash                   | Do not add | Native arrays, sets, maps, and string APIs are sufficient     |
+| Moment/date-fns          | Do not add | ISO dates are handled with Date.parse and DatePipe            |
+| State-management library | Do not add | Feature state is local and bounded                            |
+| Icon library             | Do not add | Existing inline icons and text controls are sufficient        |
+| Reactive forms package   | Retained   | Existing `@angular/forms` dependency remains available        |
 
 ## Recommended maintenance actions
 
 These are recommendations, not prerequisites for running the feature:
 
-1. Align the duplicate Tailwind declaration during a dedicated dependency-cleanup change.
-2. Decide whether @angular/forms is part of the intended future architecture.
-3. Run npm prune in a controlled cleanup if the two extraneous modules are unwanted.
-4. Use npm ci in CI so the lockfile controls exact versions.
-5. Run the organization's approved vulnerability scanner in CI.
-6. Keep Angular packages on the same minor/patch line when upgrading.
+1. Run the organization's approved vulnerability scanner in CI.
+2. Keep Angular packages on the same minor/patch line when upgrading.
+3. Commit a lockfile before changing CI from `npm install` to `npm ci`.
 
 ## Verification result
 
 - Dependency tree resolved successfully.
+- No extraneous top-level package remains after `npm prune`.
 - No missing direct dependency was reported.
-- npm audit reported zero known vulnerabilities on 2026-09-15.
+- npm audit reported zero known vulnerabilities on 2026-09-21.
 - The application compiles.
 - Strict unused-local and unused-parameter TypeScript checks pass for application and test code.
 - All 49 tests pass.

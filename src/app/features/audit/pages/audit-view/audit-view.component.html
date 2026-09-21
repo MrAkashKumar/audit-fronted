@@ -17,12 +17,18 @@
         class="picker-search-wrap relative"
         (focusout)="onTablePickerFocusOut($event)"
       >
-        <div class="picker-search">
+        <div
+          class="picker-search flex min-h-[3.75rem] items-center gap-[0.2rem] rounded-[0.9rem] border border-[#8b7645] bg-[linear-gradient(115deg,_#292723_0%,_#24221f_100%)] py-0 pr-[0.75rem] pl-[0.55rem] text-[#edbb3f] shadow-[0_0.4rem_1.1rem_rgb(0_0_0_/_16%)]"
+        >
           <label class="sr-only" for="audit-view-table-search"
             >Search audit features</label
           >
-          <span class="search-icon" aria-hidden="true">
+          <span
+            class="search-icon grid size-[2.45rem] shrink-0 place-items-center rounded-[0.7rem] border border-[rgb(241_195_79_/_16%)] bg-[#342d21]"
+            aria-hidden="true"
+          >
             <svg
+              class="size-[1.15rem]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -38,6 +44,7 @@
             type="search"
             role="combobox"
             autocomplete="off"
+            class="min-w-0 flex-1 border-0 bg-transparent p-[0.85rem] text-[0.98rem] font-semibold text-[#f4f0e8] outline-0 placeholder:text-[#98938c] placeholder:opacity-100 [&::-webkit-search-cancel-button]:hidden"
             placeholder="Search by feature name..."
             aria-autocomplete="list"
             aria-controls="audit-view-table-options"
@@ -51,14 +58,17 @@
           @if (tableSearchQuery) {
             <button
               type="button"
-              class="clear-table-search"
+              class="clear-table-search rounded-full border-0 bg-transparent px-[0.5rem] py-[0.25rem] text-[1.25rem] text-[#aaa49a] hover:text-[#f3c557] focus-visible:text-[#f3c557]"
               aria-label="Clear feature search"
               (click)="clearTableSearch()"
             >
               ×
             </button>
           }
-          <span class="table-count" aria-live="polite">
+          <span
+            class="table-count shrink-0 rounded-full bg-[#403724] px-[0.72rem] py-[0.35rem] text-[0.74rem] font-[850] text-[#f2c44e] max-[560px]:hidden"
+            aria-live="polite"
+          >
             @if (areTableLabelsLoading) {
               Loading…
             } @else {
@@ -128,7 +138,7 @@
 
       <button
         type="button"
-        class="refresh-button"
+        class="refresh-button inline-flex min-h-[3.75rem] items-center gap-[0.65rem] rounded-[0.9rem] border-0 bg-[#f3c557] px-[1.6rem] font-[850] text-[#2c2518] disabled:cursor-wait disabled:opacity-[0.62] max-[760px]:min-h-[3.25rem] max-[760px]:justify-center"
         [disabled]="areTableLabelsLoading || isRecordsLoading"
         (click)="refresh()"
       >
@@ -150,13 +160,17 @@
 
   @if (!selectedTableLabel) {
     <section
-      class="empty-selection"
+      class="empty-selection mt-4 grid min-h-[25rem] place-content-center justify-items-center rounded-[1.2rem] border border-dashed border-[#66583e] bg-[#211f1c] p-8 text-center text-[#aaa39a]"
       aria-live="polite"
       aria-atomic="true"
       [attr.role]="tableLabelsErrorMessage ? 'alert' : 'status'"
     >
-      <div class="empty-selection-icon" aria-hidden="true">
+      <div
+        class="mb-[1.2rem] grid size-[4.4rem] place-items-center rounded-2xl bg-[#392f21] text-[#f1bd43]"
+        aria-hidden="true"
+      >
         <svg
+          class="size-[1.6rem]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -167,26 +181,41 @@
         </svg>
       </div>
       @if (areTableLabelsLoading) {
-        <h1>Loading audit features</h1>
-        <p>Please wait while the available features are retrieved.</p>
+        <h1 class="m-0 text-[1.65rem] text-[#f1eee8]">
+          Loading audit features
+        </h1>
+        <p class="mt-[0.85rem] mb-0 max-w-[34rem] leading-[1.5]">
+          Please wait while the available features are retrieved.
+        </p>
       } @else if (tableLabelsErrorMessage) {
-        <h1>Unable to load audit features</h1>
-        <p>Use Refresh to try loading the available features again.</p>
+        <h1 class="m-0 text-[1.65rem] text-[#f1eee8]">
+          Unable to load audit features
+        </h1>
+        <p class="mt-[0.85rem] mb-0 max-w-[34rem] leading-[1.5]">
+          Use Refresh to try loading the available features again.
+        </p>
       } @else if (tableLabels.length === 0) {
-        <h1>No audit features available</h1>
-        <p>
+        <h1 class="m-0 text-[1.65rem] text-[#f1eee8]">
+          No audit features available
+        </h1>
+        <p class="mt-[0.85rem] mb-0 max-w-[34rem] leading-[1.5]">
           The service returned no audit features. Use Refresh to check again.
         </p>
       } @else {
-        <h1>Choose an audit feature</h1>
-        <p>
+        <h1 class="m-0 text-[1.65rem] text-[#f1eee8]">
+          Choose an audit feature
+        </h1>
+        <p class="mt-[0.85rem] mb-0 max-w-[34rem] leading-[1.5]">
           Search by feature name above. Records load only after you select a
           feature.
         </p>
       }
     </section>
   } @else {
-    <section class="records-panel" aria-labelledby="records-title">
+    <section
+      class="records-panel mt-4 overflow-hidden rounded-[1.15rem] border border-[#484238] bg-[#211f1c] shadow-[0_24px_55px_rgb(0_0_0_/_24%)]"
+      aria-labelledby="records-title"
+    >
       <header
         class="records-toolbar flex min-h-[4.5rem] items-center justify-between gap-4 border-b border-[#484238] px-[1.2rem] py-[0.8rem] max-[760px]:flex-col max-[760px]:items-start max-[560px]:items-stretch"
       >
@@ -248,19 +277,28 @@
       @if (isRecordFilterOpen) {
         <section
           id="audit-record-filters"
-          class="filter-builder"
+          class="filter-builder border-b border-[#484238] bg-[#26231f] px-[1.1rem] pt-[0.9rem] pb-[0.75rem]"
           aria-labelledby="filter-builder-title"
         >
-          <div class="filter-builder-header">
+          <div
+            class="filter-builder-header mb-[0.7rem] flex items-center justify-between gap-4 max-[760px]:flex-col max-[760px]:items-start"
+          >
             <div>
-              <h2 id="filter-builder-title">Filter records</h2>
-              <p>
+              <h2
+                id="filter-builder-title"
+                class="m-0 text-base text-[#f1eee8]"
+              >
+                Filter records
+              </h2>
+              <p class="mt-[0.25rem] mb-0 text-[0.75rem] text-[#9b958c]">
                 Build precise rules. Choose AND or OR independently for each
                 added rule.
               </p>
             </div>
 
-            <div class="filter-actions">
+            <div
+              class="filter-actions flex items-center gap-[0.55rem] max-[760px]:w-full max-[760px]:flex-wrap"
+            >
               <button
                 type="button"
                 class="add-condition"
@@ -278,7 +316,7 @@
             </div>
           </div>
 
-          <div class="filter-conditions">
+          <div class="filter-conditions grid gap-[0.5rem]">
             @for (
               condition of filterConditions;
               track condition.id;
@@ -566,7 +604,9 @@
             }
           </div>
 
-          <p class="filter-help">
+          <p
+            class="filter-help mt-[0.55rem] mb-0 text-[0.75rem] text-[#9b958c]"
+          >
             Number and date fields support comparisons. Filters use source-table
             fields and apply to the current API page. AND is evaluated before
             OR.
@@ -574,28 +614,38 @@
         </section>
       }
       @if (isRecordsLoading) {
-        <div class="panel-state" aria-live="polite">
+        <div
+          class="panel-state grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#a9a39a]"
+          aria-live="polite"
+        >
           <span class="loading-ring" aria-hidden="true"></span>
           <strong>Loading audit records…</strong>
         </div>
       } @else if (recordsErrorMessage) {
-        <div class="panel-state panel-state--error" role="alert">
+        <div
+          class="panel-state panel-state--error grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#a9a39a]"
+          role="alert"
+        >
           <strong>{{ recordsErrorMessage }}</strong>
           <button type="button" (click)="retryAuditRecords()">Retry</button>
         </div>
       } @else if (filteredRows.length === 0) {
         <div
-          class="panel-state"
+          class="panel-state grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#a9a39a]"
           role="status"
           aria-live="polite"
           aria-atomic="true"
         >
           @if (activeFilterCount > 0) {
             <strong>No matching records</strong>
-            <p>Change or clear the filter conditions to see more results.</p>
+            <p class="m-0 text-[#aaa49c]">
+              Change or clear the filter conditions to see more results.
+            </p>
           } @else {
             <strong>No audit records available</strong>
-            <p>This feature did not return records for the current page.</p>
+            <p class="m-0 text-[#aaa49c]">
+              This feature did not return records for the current page.
+            </p>
           }
         </div>
       } @else {
