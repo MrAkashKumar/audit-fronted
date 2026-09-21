@@ -73,6 +73,10 @@ const createRecordsResponse = (
             ID: 2001,
             REV: 9401,
             REVTYPE: 0,
+            CREATED_BY: null,
+            CREATED_ON: null,
+            updatedBy: null,
+            updateTimestamp: null,
             LOCOMOTIVE_CODE: "SG-L-001",
             COUNTRY_CODE: "SG",
             FLEET_STATUS: "MAINTENANCE",
@@ -85,6 +89,10 @@ const createRecordsResponse = (
             ID: 2001,
             REV: 9450,
             REVTYPE: 1,
+            CREATED_BY: null,
+            CREATED_ON: null,
+            updatedBy: null,
+            updateTimestamp: null,
             LOCOMOTIVE_CODE: "SG-L-001",
             COUNTRY_CODE: "SG",
             FLEET_STATUS: "AVAILABLE",
@@ -267,6 +275,16 @@ describe("AuditViewComponent", () => {
     expect(
       component.rows[0].historyColumns.map((column) => column.key),
     ).toContain("COUNTRY_CODE");
+    expect(
+      component.rows[0].historyColumns.map((column) => column.key),
+    ).not.toEqual(
+      expect.arrayContaining([
+        "CREATED_BY",
+        "CREATED_ON",
+        "updatedBy",
+        "updateTimestamp",
+      ]),
+    );
     expect(element.querySelector(".record-id")?.textContent).toContain("#2001");
   });
 
@@ -370,6 +388,180 @@ describe("AuditViewComponent", () => {
     await selectTable(fixture, "Position-Balance");
     expect(component.historySortKey).toBe("");
     expect(component.historySortDirection).toBe("");
+  });
+
+  it("highlights dynamic values changed from the previous chronological revision", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+
+    await selectTable(fixture, "Loco-Singapore");
+    const row = component.rows[0];
+    const fleetStatusColumn = row.historyColumns.find(
+      (column) => column.key === "FLEET_STATUS",
+    );
+    const countryColumn = row.historyColumns.find(
+      (column) => column.key === "COUNTRY_CODE",
+    );
+
+    expect(fleetStatusColumn).toBeDefined();
+    expect(countryColumn).toBeDefined();
+    expect(
+      component.getHistoryChangeDescription(
+        row,
+        row.auditHistory[0],
+        fleetStatusColumn!,
+      ),
+    ).toBeNull();
+    expect(
+      component.getHistoryChangeDescription(
+        row,
+        row.auditHistory[1],
+        fleetStatusColumn!,
+      ),
+    ).toBe("Changed from MAINTENANCE to AVAILABLE");
+    expect(
+      component.getHistoryChangeDescription(
+        row,
+        row.auditHistory[1],
+        countryColumn!,
+      ),
+    ).toBeNull();
+
+    component.toggleHistorySort("revision");
+    component.toggleHistorySort("revision");
+    component.toggleRow(row.id);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const changedCells = element.querySelectorAll(
+      ".history-cell-value--changed",
+    );
+    const changedCell = changedCells[0] as HTMLElement | undefined;
+
+    expect(changedCells).toHaveLength(1);
+    expect(changedCell?.textContent).toContain("AVAILABLE");
+    expect(changedCell?.title).toBe("Changed from MAINTENANCE to AVAILABLE");
+    expect(changedCell?.closest("tr")?.textContent).toContain("#9450");
+  });
+
+  it("marks a DELETE row while preserving true field-change highlights", async () => {
+    const deleteResponse = createRecordsResponse();
+    const rowResponse = deleteResponse.data.rows[0];
+    rowResponse.auditHistory.push({
+      ...structuredClone(rowResponse.auditHistory[1]),
+      sequenceNumber: 3,
+      revision: 9500,
+      revisionTypeCode: 2,
+      operation: "DELETE",
+      REV: 9500,
+      REVTYPE: 2,
+      FLEET_STATUS: null,
+    });
+    rowResponse.changeSummary = {
+      ...rowResponse.changeSummary,
+      totalRevisions: 3,
+      deleteCount: 1,
+      latestRevision: 9500,
+    };
+    recordsResponseOverride = of(deleteResponse);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+
+    const row = component.rows[0];
+    const deleteRevision = row.auditHistory[2];
+    const fleetStatusColumn = row.historyColumns.find(
+      (column) => column.key === "FLEET_STATUS",
+    );
+    const countryColumn = row.historyColumns.find(
+      (column) => column.key === "COUNTRY_CODE",
+    );
+
+    expect(component.getOperationTone(deleteRevision.operation)).toBe("delete");
+    expect(
+      component.getHistoryChangeDescription(
+        row,
+        deleteRevision,
+        fleetStatusColumn!,
+      ),
+    ).toBe("Changed from AVAILABLE to null");
+    expect(
+      component.getHistoryChangeDescription(
+        row,
+        deleteRevision,
+        countryColumn!,
+      ),
+    ).toBeNull();
+
+    component.toggleRow(row.id);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const renderedDeleteRow = Array.from(
+      element.querySelectorAll<HTMLTableRowElement>(".history-table tbody tr"),
+    ).find((tableRow) => tableRow.textContent?.includes("#9500"));
+
+    expect(
+      renderedDeleteRow?.querySelector(".operation-badge--delete")?.textContent,
+    ).toContain("DELETE");
+    expect(
+      renderedDeleteRow?.classList.contains("history-record-row--delete"),
+    ).toBe(true);
+    expect(
+      renderedDeleteRow
+        ?.querySelector(".operation-badge--delete")
+        ?.getAttribute("aria-label"),
+    ).toContain("Record deleted in revision 9500");
+    expect(
+      renderedDeleteRow?.querySelectorAll(".history-cell-value--changed"),
+    ).toHaveLength(1);
+    expect(
+      renderedDeleteRow?.querySelector<HTMLElement>(
+        ".history-cell-value--changed",
+      )?.title,
+    ).toBe("Changed from AVAILABLE to null");
+  });
+
+  it("marks an unchanged DELETE snapshot without inventing field changes", async () => {
+    const deleteResponse = createRecordsResponse();
+    const rowResponse = deleteResponse.data.rows[0];
+    rowResponse.auditHistory.push({
+      ...structuredClone(rowResponse.auditHistory[1]),
+      sequenceNumber: 3,
+      revision: 9501,
+      revisionTypeCode: 2,
+      operation: "DELETE",
+      REV: 9501,
+      REVTYPE: 2,
+    });
+    recordsResponseOverride = of(deleteResponse);
+
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Loco-Singapore");
+    component.toggleRow(component.rows[0].id);
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const renderedDeleteRow = Array.from(
+      element.querySelectorAll<HTMLTableRowElement>(".history-table tbody tr"),
+    ).find((tableRow) => tableRow.textContent?.includes("#9501"));
+
+    expect(
+      renderedDeleteRow?.classList.contains("history-record-row--delete"),
+    ).toBe(true);
+    expect(
+      renderedDeleteRow?.querySelectorAll(".history-cell-value--changed"),
+    ).toHaveLength(0);
+    expect(
+      renderedDeleteRow
+        ?.querySelector(".operation-badge--delete")
+        ?.getAttribute("title"),
+    ).toContain("Values shown are the final stored snapshot");
   });
 
   it("keeps every added AND or OR join independent", async () => {
@@ -1317,6 +1509,24 @@ describe("AuditViewComponent", () => {
 
     expect(historyRegion.scrollLeft).toBe(45);
     expect(verticalWheel.defaultPrevented).toBe(false);
+
+    Object.defineProperty(historyRegion, "scrollLeft", {
+      configurable: true,
+      get: () => 600,
+      set: () => undefined,
+    });
+    const edgeWheel = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaX: 40,
+    });
+    const outerWheelSpy = vi.fn();
+    recordsRegion.append(historyRegion);
+    recordsRegion.addEventListener("wheel", outerWheelSpy);
+    historyRegion.dispatchEvent(edgeWheel);
+
+    expect(edgeWheel.defaultPrevented).toBe(true);
+    expect(outerWheelSpy).not.toHaveBeenCalled();
   });
 
   it("renders 100 API rows, 40 dynamic columns, and 100 expanded revisions", async () => {

@@ -46,7 +46,7 @@ npm run build
 | @angular/compiler         | ^21.2.0        |   21.2.23 | Keep                     | Standard Angular application dependency/toolchain compatibility        |
 | rxjs                      | ~7.8.0         |     7.8.2 | Yes                      | Observable responses and explicit subscribe flows                      |
 | tslib                     | ^2.3.0         |     2.8.1 | Yes                      | TypeScript runtime helpers used by Angular output                      |
-| tailwindcss               | ^4.3.2         |     4.3.3 | Build-time use           | src/styles.css imports tailwindcss                                     |
+| tailwindcss               | ^4.3.2         |     4.3.3 | Build-time use           | Global import plus reusable audit-view template utilities              |
 | @angular/forms            | ^21.2.0        |   21.2.23 | Not currently imported   | Native value/change/input bindings implement the current filters       |
 
 ## Development dependencies
@@ -87,8 +87,10 @@ Every implemented requirement is covered by the existing stack:
 - Subscription handling: RxJS.
 - Filters: native inputs/selects and component logic.
 - Pagination: response metadata and native buttons/select.
-- Styling: the existing Tailwind global import, HEIC global base rules, and component-scoped audit CSS.
+- Styling: the existing Tailwind global import, reusable template utilities, HEIC global base rules,
+  and component-scoped CSS for table-specific behavior.
 - Tests: Angular builder, Vitest, and jsdom.
+- Production data access: Angular HttpClient and RxJS only; no mock-data or fixture dependency.
 
 ### 2. Tailwind is declared twice
 
@@ -136,9 +138,14 @@ npm audit reported zero known vulnerabilities in the current lockfile dependency
 
 The npm report counted 603 packages across production, development, and optional dependency relationships. This result is a time-specific registry result, so CI should continue running the organization's approved dependency scanner.
 
-### 7. Audit UI styling does not require Tailwind utilities
+### 7. Tailwind is active without another installation
 
-src/styles.css imports tailwindcss, but no project-level PostCSS configuration file was found. The Audit Viewer uses native CSS in `audit-view.component.css` with Angular component encapsulation and does not rely on Tailwind utility classes. Tailwind and its PostCSS packages remain documented because they were part of the supplied dependency set; no new styling dependency is needed.
+`.postcssrc.json` connects the already-installed `@tailwindcss/postcss` plugin to the Angular build.
+The unchanged global `src/styles.css` import supplies Tailwind, and straightforward layout,
+responsive, typography, spacing, and icon-size rules are applied directly in
+`audit-view.component.html`. Complex table scrolling, sticky headers, pseudo-elements, state
+variants, and component interactions remain encapsulated in `audit-view.component.css` because
+those rules are clearer and safer as feature-specific CSS.
 
 ## Dependency decision matrix
 
@@ -170,5 +177,5 @@ These are recommendations, not prerequisites for running the feature:
 - npm audit reported zero known vulnerabilities on 2026-09-15.
 - The application compiles.
 - Strict unused-local and unused-parameter TypeScript checks pass for application and test code.
-- All 45 tests pass.
+- All 49 tests pass.
 - Production build completes without warnings.

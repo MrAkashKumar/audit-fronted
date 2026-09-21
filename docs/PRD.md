@@ -30,9 +30,14 @@ business-envelope `status` or `code`.
 - ID, revision count, and record state are fixed semantic columns.
 - Other main columns come from `originalData`.
 - History columns come from `auditHistory` and may differ per table or record.
+- Create/update metadata columns are hidden from expanded history only; matching source columns
+  remain available in the main table and filters.
 - Null main values display an em dash.
 - Null history values display `null`.
 - Wide history data must remain horizontally scrollable.
+- History values that differ from the prior chronological revision must be highlighted dynamically;
+  the comparison must remain stable when the displayed table is sorted.
+- The source and history tables must scroll horizontally as independent mouse/trackpad regions.
 
 ## Filtering
 
@@ -57,8 +62,8 @@ business-envelope `status` or `code`.
 
 ## Acceptance criteria
 
-- Network traffic uses only the two documented audit endpoints.
+- Production API mode uses only the two documented audit endpoints.
 - Selecting a label immediately starts the corresponding record request.
 - Query parameters reflect page controls.
 - API errors display an error state and do not display previously configured records.
-- No runtime JSON audit files or legacy fixed-schema page remain.
+- No runtime JSON audit files, fallback responses, or legacy fixed-schema page exist.

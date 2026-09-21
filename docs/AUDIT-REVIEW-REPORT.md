@@ -23,7 +23,7 @@ maintainability observation is recorded as non-blocking P4 debt rather than a re
 
 | Check                                   | Result                                |
 | --------------------------------------- | ------------------------------------- |
-| `npm test -- --watch=false`             | Pass — 3 files, 45 tests              |
+| `npm test`                              | Pass — 3 files, 49 tests              |
 | `npm run build`                         | Pass — production build, no warnings  |
 | Strict application TypeScript           | Pass — no unused locals or parameters |
 | Strict specification TypeScript         | Pass — no unused locals or parameters |

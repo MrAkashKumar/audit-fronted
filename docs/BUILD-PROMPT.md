@@ -28,5 +28,5 @@ Requirements:
     filtering, joins, paging, refresh, and error states.
 14. Run `npm test -- --watch=false`, `npm run build`, and `git diff --check`.
 
-The completed application must be ready to connect to a real backend without deleting or disabling
-any demonstration-data logic because no such runtime logic should exist.
+The completed application must connect to the real backend without deleting or disabling any
+demonstration-data logic because no such runtime logic should exist.

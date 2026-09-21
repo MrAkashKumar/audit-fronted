@@ -1,13 +1,14 @@
 # Audit Frontend
 
-Angular audit-history viewer backed exclusively by live HTTP APIs. The application contains no
-runtime JSON records, mock responses, or automatic data fallback.
+Angular audit-history viewer that loads selectable features and fully dynamic audit schemas from
+the production HTTP API. No runtime fixture, local JSON response, or fallback data path exists.
 
 ## What the application provides
 
-- Searchable audit-feature selector populated by the backend.
+- Searchable audit-feature selector populated by the backend API.
 - Dynamic record columns derived from each response's `originalData`.
 - Dynamic expanded-history columns derived from each record's `auditHistory`.
+- Previous-revision comparison with dynamic changed-value highlighting and before/after tooltips.
 - Source-field filtering with independent AND/OR joins.
 - Sorting for every main and history column, expandable history, hover/focus history scrolling,
   loading states, and retryable errors.
@@ -91,7 +92,8 @@ User selects a label
 ```
 
 The service returns cold Observables and never subscribes internally. The component owns loading,
-success, error, and subscription cancellation. HTTP failures are not replaced with local data.
+success, error, and subscription cancellation. HTTP failures propagate to the component and never
+fall back to local data.
 
 ## Project structure
 
@@ -126,8 +128,7 @@ audit-fronted/
 
 ## Local setup
 
-Prerequisites: Node.js 22+, npm 10+, and a backend or development proxy serving the two relative
-`/api/v1/audit` endpoints.
+Prerequisites: Node.js 22+, npm 10+, and a backend serving the documented audit endpoints.
 
 ```bash
 npm ci
@@ -136,19 +137,20 @@ npm start
 
 Open [http://localhost:4200/audit](http://localhost:4200/audit).
 
-Because the frontend uses relative URLs, production should route `/api/v1/audit/*` to the audit
-backend on the same origin. For a separate local backend, configure an Angular development proxy
-or enable CORS on the backend; no service-code change is required.
+Route `/api/v1/audit/*` to the backend on the same origin or configure an Angular development proxy.
+See [Production API integration](docs/PRODUCTION-DATA-GUIDE.md) for the runtime flow and validation
+checklist.
 
 ## Error behavior
 
 - A table-label failure leaves the selector empty and shows `Unable to load audit features.`
 - A record failure clears the previous rows and shows a Retry action.
 - Retry repeats the same selected label, page number, and page size.
-- No static response is displayed when an API is unavailable.
+- HTTP failures are never replaced with local or generated data.
 
-The regression suite currently contains 45 passing tests across component, service, and application
-coverage. The production build completes without warnings.
+The regression suite covers component behavior, endpoint requests, pagination, dynamic change
+highlighting, DELETE lifecycle presentation, and independent scrolling. The production build must
+complete without warnings.
 
 ## Commands
 
@@ -173,3 +175,4 @@ generated build output and must remain in source control.
 - [Dependency audit](docs/DEPENDENCIES.md)
 - [Reusable build prompt](docs/BUILD-PROMPT.md)
 - [API-only migration record](without_Dummy_data.md)
+- [Production API integration and validation](docs/PRODUCTION-DATA-GUIDE.md)

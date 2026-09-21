@@ -24,8 +24,9 @@ public/data/audit-records-loco-singapore.json
 - The JSON-only `getAuditRecords()` implementation.
 - Backend-to-JSON `catchError` fallback branches.
 - Client-side fixture pagination and filename normalization.
+- The temporary local-data injection token and provider.
+- Local bundle caching, unwrapping, and client-side pagination.
 - The `Sample data` banner and its CSS.
-- The unused `tableLabelsResponse` component state.
 - Envelope `status` and `code` fields.
 - The legacy `/audit/cards` route and `audit-list` component.
 - The fixed-schema `audit-record.model.ts` model used only by that legacy page.

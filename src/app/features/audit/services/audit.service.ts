@@ -39,10 +39,13 @@ export class AuditService {
       return throwError(() => new Error("An audit table label is required."));
     }
 
+    const normalizedPageNo = this.normalizePageNo(pageNo);
+    const normalizedPageSize = this.normalizePageSize(pageSize);
+
     const params = new HttpParams({
       fromObject: {
-        pageNo: this.normalizePageNo(pageNo).toString(),
-        pageSize: this.normalizePageSize(pageSize).toString(),
+        pageNo: normalizedPageNo.toString(),
+        pageSize: normalizedPageSize.toString(),
       },
     });
 

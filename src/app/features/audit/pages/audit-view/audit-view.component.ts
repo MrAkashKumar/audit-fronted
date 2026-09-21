@@ -78,6 +78,16 @@ export class AuditViewComponent implements OnInit, OnDestroy {
       result: AuditViewRow["auditHistory"];
     }
   >();
+  private readonly historyChangeCache = new WeakMap<
+    AuditViewRow,
+    {
+      history: AuditViewRow["auditHistory"];
+      changes: WeakMap<
+        AuditViewRow["auditHistory"][number],
+        Map<string, string>
+      >;
+    }
+  >();
   private readonly mainColumnTypeEvidence = new Set<string>();
   private typeaheadBuffer = "";
   private typeaheadResetTimer?: ReturnType<typeof setTimeout>;
@@ -949,13 +959,10 @@ export class AuditViewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const previousScrollLeft = scrollRegion.scrollLeft;
     scrollRegion.scrollLeft += horizontalDelta;
 
-    if (scrollRegion.scrollLeft !== previousScrollLeft) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   retryAuditRecords(): void {
@@ -1085,6 +1092,14 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     column: AuditViewColumn,
   ): AuditCellValue {
     return history[column.key] ?? null;
+  }
+
+  getHistoryChangeDescription(
+    row: AuditViewRow,
+    history: AuditViewRow["auditHistory"][number],
+    column: AuditViewColumn,
+  ): string | null {
+    return this.getHistoryChanges(row).get(history)?.get(column.key) ?? null;
   }
 
   formatCellValue(value: AuditCellValue, showNull = false): string {
@@ -1502,6 +1517,62 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     };
   }
 
+  private getHistoryChanges(
+    row: AuditViewRow,
+  ): WeakMap<AuditViewRow["auditHistory"][number], Map<string, string>> {
+    const cached = this.historyChangeCache.get(row);
+
+    if (cached?.history === row.auditHistory) {
+      return cached.changes;
+    }
+
+    const changes = new WeakMap<
+      AuditViewRow["auditHistory"][number],
+      Map<string, string>
+    >();
+    const chronologicalHistory = row.auditHistory
+      .map((entry, responseIndex) => ({ entry, responseIndex }))
+      .sort(
+        (left, right) =>
+          left.entry.sequenceNumber - right.entry.sequenceNumber ||
+          left.entry.revision - right.entry.revision ||
+          left.responseIndex - right.responseIndex,
+      );
+
+    for (let index = 1; index < chronologicalHistory.length; index += 1) {
+      const current = chronologicalHistory[index]?.entry;
+      const previous = chronologicalHistory[index - 1]?.entry;
+
+      if (!current || !previous) {
+        continue;
+      }
+
+      const changedColumns = new Map<string, string>();
+
+      for (const column of row.historyColumns) {
+        const currentValue = current[column.key] ?? null;
+        const previousValue = previous[column.key] ?? null;
+
+        if (!Object.is(currentValue, previousValue)) {
+          changedColumns.set(
+            column.key,
+            `Changed from ${this.formatCellValue(previousValue, true)} to ${this.formatCellValue(currentValue, true)}`,
+          );
+        }
+      }
+
+      if (changedColumns.size > 0) {
+        changes.set(current, changedColumns);
+      }
+    }
+
+    this.historyChangeCache.set(row, {
+      history: row.auditHistory,
+      changes,
+    });
+    return changes;
+  }
+
   private createColumns(
     records: DynamicAuditRecord[],
     source: "originalData" | "auditHistory",
@@ -1521,7 +1592,7 @@ export class AuditViewComponent implements OnInit, OnDestroy {
           const isExcluded =
             source === "originalData"
               ? key === "ID"
-              : this.historyColumnExclusions.has(key);
+              : this.isHistoryColumnExcluded(key);
 
           if (!isExcluded) {
             keys.add(key);
@@ -1535,6 +1606,17 @@ export class AuditViewComponent implements OnInit, OnDestroy {
       label: this.toColumnLabel(key),
       dataType: this.inferColumnType(key, records, source),
     }));
+  }
+
+  private isHistoryColumnExcluded(key: string): boolean {
+    if (this.historyColumnExclusions.has(key)) {
+      return true;
+    }
+
+    const normalizedKey = key.replace(/[^a-z0-9]/gi, "").toLocaleUpperCase();
+    return (
+      normalizedKey.startsWith("CREATE") || normalizedKey.startsWith("UPDATE")
+    );
   }
 
   private mergeColumns(

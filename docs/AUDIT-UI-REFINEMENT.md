@@ -6,8 +6,8 @@ This document records the component-scoped design improvements applied to the Au
 changes preserve the existing dark, warm-charcoal, gold, orange, green, blue, and red visual
 language while making the page denser, clearer, and more responsive to API-driven schemas.
 
-No runtime sample data was introduced. The selected feature, columns, rows, history fields, counts,
-and pagination continue to come from the two audit APIs.
+The runtime is API-only. UI behavior is driven by the two typed audit responses and never by a local
+JSON source or generated fallback.
 
 ## Updated control design
 
@@ -78,6 +78,8 @@ The main records table and nested history table use the same width strategy:
   headers, so horizontal controls remain reachable without first traversing 100 rows.
 - Hovering or focusing the nested history activates only its scrollbar; the outer records scrollbar
   stays inactive until the pointer/focus returns to the records region.
+- Horizontal gestures remain captured by the nested history region at its left and right edges, so
+  reaching a boundary cannot unexpectedly move the outer records table.
 - The expanded-history tree keeps a compact indentation, and the final dynamic history column has
   explicit end padding so its content and the table boundary remain clear when fully scrolled.
 

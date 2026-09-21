@@ -191,6 +191,11 @@ Requirements:
 - The main records region is also bounded with a sticky header. Pointer/focus interaction inside
   history activates the history scroller without activating the outer records scroller.
 - The history scroll region is keyboard-focusable and receives a visible focus treatment.
+- A horizontal trackpad gesture, mouse tilt wheel, `Shift + mouse wheel`, or dragging the revealed
+  scrollbar moves only the table under the pointer, including at either horizontal boundary.
+- Each dynamic history value is compared with the prior chronological revision. Changed values use
+  an orange marker/background and expose `Changed from … to …` on hover; the first revision is the
+  unhighlighted baseline and visual sorting never changes the comparison relationship.
 
 ## Interaction state model
 

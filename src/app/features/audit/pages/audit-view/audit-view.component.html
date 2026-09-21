@@ -1,14 +1,24 @@
 <main class="audit-view-page">
-  <section class="table-picker" aria-labelledby="audit-table-title">
-    <p id="audit-table-title" class="field-label">Audit feature</p>
+  <section
+    class="table-picker relative z-[4]"
+    aria-labelledby="audit-table-title"
+  >
+    <p
+      id="audit-table-title"
+      class="field-label m-0 mb-[0.55rem] ml-[0.25rem] text-[0.78rem] font-[850] tracking-[0.11em] text-[#f1c34f] uppercase"
+    >
+      Audit feature
+    </p>
 
-    <div class="picker-controls">
+    <div
+      class="picker-controls grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 max-[760px]:grid-cols-1"
+    >
       <div
-        class="picker-search-wrap"
+        class="picker-search-wrap relative"
         (focusout)="onTablePickerFocusOut($event)"
       >
         <div class="picker-search">
-          <label class="visually-hidden" for="audit-view-table-search"
+          <label class="sr-only" for="audit-view-table-search"
             >Search audit features</label
           >
           <span class="search-icon" aria-hidden="true">
@@ -123,7 +133,7 @@
         (click)="refresh()"
       >
         <svg
-          class="action-icon"
+          class="size-[1.2rem] shrink-0 [stroke-linecap:round] [stroke-linejoin:round]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -177,18 +187,32 @@
     </section>
   } @else {
     <section class="records-panel" aria-labelledby="records-title">
-      <header class="records-toolbar">
-        <div class="records-heading">
-          <p class="selected-feature-name">
+      <header
+        class="records-toolbar flex min-h-[4.5rem] items-center justify-between gap-4 border-b border-[#484238] px-[1.2rem] py-[0.8rem] max-[760px]:flex-col max-[760px]:items-start max-[560px]:items-stretch"
+      >
+        <div class="records-heading min-w-0">
+          <p
+            class="selected-feature-name mb-[0.2rem] overflow-hidden text-ellipsis whitespace-nowrap text-[0.83rem] font-[750] text-[#d7d1c8]"
+          >
             {{ getTableDisplayName(selectedTableLabel) }}
           </p>
-          <h1 id="records-title">
+          <h1 id="records-title" class="m-0 flex items-baseline gap-3">
             @if (isRecordsLoading) {
-              <strong aria-hidden="true">…</strong>
-              <span>Loading records</span>
+              <strong class="text-[1.75rem] text-[#f2c54f]" aria-hidden="true"
+                >…</strong
+              >
+              <span
+                class="text-[0.76rem] font-extrabold tracking-[0.08em] text-[#9f9990] uppercase"
+                >Loading records</span
+              >
             } @else {
-              <strong>{{ totalRecordCount }}</strong>
-              <span>{{ totalRecordLabel }}</span>
+              <strong class="text-[1.75rem] text-[#f2c54f]">{{
+                totalRecordCount
+              }}</strong>
+              <span
+                class="text-[0.76rem] font-extrabold tracking-[0.08em] text-[#9f9990] uppercase"
+                >{{ totalRecordLabel }}</span
+              >
             }
           </h1>
         </div>
@@ -205,7 +229,7 @@
           (click)="toggleRecordFilters()"
         >
           <svg
-            class="action-icon"
+            class="size-[1.2rem] shrink-0 [stroke-linecap:round] [stroke-linejoin:round]"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -585,7 +609,7 @@
           <table class="records-table data-table">
             <thead>
               <tr>
-                <th scope="col"><span class="visually-hidden">Expand</span></th>
+                <th scope="col"><span class="sr-only">Expand</span></th>
                 <th scope="col" [attr.aria-sort]="getAriaSort('ID')">
                   <button
                     type="button"
@@ -748,10 +772,14 @@
                   <tr class="history-row">
                     <td [attr.colspan]="columns.length + 4">
                       <div class="history-content">
-                        <header>
-                          <div>
-                            <strong>Audit history</strong>
-                            <span>
+                        <header
+                          class="mb-[0.7rem] flex items-center justify-between gap-4"
+                        >
+                          <div class="flex items-baseline gap-[0.6rem]">
+                            <strong class="text-[#e6b94a]"
+                              >Audit history</strong
+                            >
+                            <span class="text-[#8f8981]">
                               {{ row.auditHistory.length }} revisions for record
                               #{{ row.id }}
                             </span>
@@ -868,12 +896,32 @@
                                 history of getSortedAuditHistory(row);
                                 track history.revision
                               ) {
-                                <tr>
+                                @let operationTone =
+                                  getOperationTone(history.operation);
+                                <tr
+                                  [class.history-record-row--delete]="
+                                    operationTone === 'delete'
+                                  "
+                                >
                                   <td>
                                     <span
                                       [class]="
                                         'operation-badge operation-badge--' +
-                                        getOperationTone(history.operation)
+                                        operationTone
+                                      "
+                                      [attr.title]="
+                                        operationTone === 'delete'
+                                          ? 'Record deleted in revision #' +
+                                            history.revision +
+                                            '. Values shown are the final stored snapshot.'
+                                          : null
+                                      "
+                                      [attr.aria-label]="
+                                        operationTone === 'delete'
+                                          ? 'Delete operation. Record deleted in revision ' +
+                                            history.revision +
+                                            '. Values shown are the final stored snapshot.'
+                                          : null
                                       "
                                     >
                                       {{ history.operation }}
@@ -888,9 +936,18 @@
                                   ) {
                                     @let historyValue =
                                       getHistoryValue(history, column);
+                                    @let historyChange =
+                                      getHistoryChangeDescription(
+                                        row,
+                                        history,
+                                        column
+                                      );
                                     <td>
                                       <span
                                         class="cell-value history-cell-value"
+                                        [class.history-cell-value--changed]="
+                                          historyChange !== null
+                                        "
                                         [class.cell-value--expandable]="
                                           isExpandableCellValue(historyValue)
                                         "
@@ -898,12 +955,13 @@
                                           historyValue === null
                                         "
                                         [attr.title]="
-                                          historyValue === null
+                                          historyChange ??
+                                          (historyValue === null
                                             ? null
                                             : formatCellValue(
                                                 historyValue,
                                                 true
-                                              )
+                                              ))
                                         "
                                         [attr.tabindex]="
                                           isExpandableCellValue(historyValue)
@@ -911,14 +969,20 @@
                                             : null
                                         "
                                         [attr.aria-label]="
-                                          isExpandableCellValue(historyValue)
+                                          historyChange !== null
                                             ? column.label +
                                               ': ' +
-                                              formatCellValue(
-                                                historyValue,
-                                                true
-                                              )
-                                            : null
+                                              historyChange
+                                            : isExpandableCellValue(
+                                                  historyValue
+                                                )
+                                              ? column.label +
+                                                ': ' +
+                                                formatCellValue(
+                                                  historyValue,
+                                                  true
+                                                )
+                                              : null
                                         "
                                       >
                                         {{
@@ -943,9 +1007,11 @@
       }
 
       @if (recordsResponse && !isRecordsLoading && !recordsErrorMessage) {
-        <footer class="records-footer">
-          <div class="records-summary">
-            <strong>
+        <footer
+          class="records-footer flex min-h-[3.75rem] items-center justify-between gap-4 px-[1.1rem] py-[0.6rem] text-[0.78rem] text-[#98928a] max-[760px]:flex-row max-[760px]:flex-wrap max-[560px]:flex-col max-[560px]:items-stretch"
+        >
+          <div class="records-summary grid gap-[0.2rem]">
+            <strong class="text-[#9c968e]">
               @if (activeFilterCount > 0) {
                 {{ filteredRows.length }} shown on this page /
                 {{ recordsResponse.data.totalElements }} total
@@ -954,13 +1020,18 @@
                 {{ recordsResponse.data.totalPages }} pages
               }
             </strong>
-            <small>Sorting and filters apply to the current API page.</small>
+            <small class="text-[0.7rem] text-[#aaa49c]"
+              >Sorting and filters apply to the current API page.</small
+            >
           </div>
 
-          <div class="pagination">
+          <div
+            class="pagination flex items-center gap-[0.65rem] max-[760px]:ml-auto max-[760px]:flex-wrap max-[560px]:ml-0"
+          >
             <label for="items-per-page">Items per page:</label>
             <select
               id="items-per-page"
+              class="min-h-[2.45rem] min-w-[4.35rem] rounded-[0.45rem] border border-[#625743] bg-[#24211e] px-[0.65rem] py-[0.4rem] text-[0.78rem] text-[#d4cec5]"
               [value]="itemsPerPage"
               [disabled]="isRecordsLoading"
               (change)="onItemsPerPageChange($event)"
@@ -974,7 +1045,10 @@
               {{ currentPageStart }} – {{ currentPageEnd }} of
               {{ recordsResponse.data.totalElements }}
             </span>
-            <div class="page-buttons" aria-label="Pagination">
+            <div
+              class="page-buttons flex items-center gap-[0.35rem]"
+              aria-label="Pagination"
+            >
               <button
                 type="button"
                 [disabled]="currentPageNo === 0 || isRecordsLoading"
@@ -982,7 +1056,7 @@
                 (click)="goToPage(0)"
               >
                 <svg
-                  class="pagination-icon"
+                  class="size-[1.1rem] [stroke-linecap:round] [stroke-linejoin:round]"
                   viewBox="0 0 20 20"
                   fill="none"
                   stroke="currentColor"
@@ -999,7 +1073,7 @@
                 (click)="goToPage(currentPageNo - 1)"
               >
                 <svg
-                  class="pagination-icon"
+                  class="size-[1.1rem] [stroke-linecap:round] [stroke-linejoin:round]"
                   viewBox="0 0 20 20"
                   fill="none"
                   stroke="currentColor"
@@ -1016,7 +1090,7 @@
                 (click)="goToPage(currentPageNo + 1)"
               >
                 <svg
-                  class="pagination-icon"
+                  class="size-[1.1rem] [stroke-linecap:round] [stroke-linejoin:round]"
                   viewBox="0 0 20 20"
                   fill="none"
                   stroke="currentColor"
@@ -1033,7 +1107,7 @@
                 (click)="goToPage(lastPageNo)"
               >
                 <svg
-                  class="pagination-icon"
+                  class="size-[1.1rem] [stroke-linecap:round] [stroke-linejoin:round]"
                   viewBox="0 0 20 20"
                   fill="none"
                   stroke="currentColor"

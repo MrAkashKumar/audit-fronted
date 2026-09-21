@@ -98,9 +98,12 @@ interface DynamicAuditHistoryEntry {
 - `operation` and `revision` have dedicated history columns.
 - Technical keys such as `REV`, `REVTYPE`, and `revisionTypeCode` are excluded from the dynamic
   history column list.
+- History keys whose normalized names begin with `CREATE` or `UPDATE` are excluded from the expanded
+  history view only. Equivalent source fields inside `originalData` still render in the main table
+  and remain available to filters.
 
 ## Empty and error responses
 
 An empty successful page must still return complete pagination metadata with `rows: []`.
 Transport or server failures must use HTTP error responses. The frontend does not manufacture a
-successful response and does not use local records.
+successful response, perform client-side page slicing, or fall back to local records.

@@ -8,8 +8,7 @@ The audit feature is a lazy-loaded, standalone Angular feature at `/audit`.
 flowchart LR
     Router --> AuditViewComponent
     AuditViewComponent -->|subscribe| AuditService
-    AuditService -->|GET /api/v1/audit/allTable| Backend
-    AuditService -->|GET /api/v1/audit/label?pageNo&pageSize| Backend
+    AuditService -->|GET /api/v1/audit/*| Backend
     Backend -->|typed Observable response| AuditViewComponent
     AuditViewComponent --> Selector
     AuditViewComponent --> DynamicTable
@@ -26,6 +25,7 @@ flowchart LR
 - Normalizes `pageSize` to a positive integer, defaulting to 10.
 - Returns typed, cold HttpClient Observables.
 - Propagates HTTP errors.
+- Has no fixture, fallback, response replacement, or local pagination path.
 
 ### AuditViewComponent
 
@@ -63,8 +63,8 @@ sequenceDiagram
     View-->>User: Dynamic records and history
 ```
 
-On HTTP failure, the Observable errors and the component renders an error/retry state. No local
-data source is queried.
+On HTTP failure, the Observable errors and the component renders an error/retry state. There is no
+automatic fallback or alternate local data source.
 
 ## Pagination
 
@@ -82,11 +82,18 @@ and render whenever the selected API response supplies them.
 
 History columns are computed per record from its history entries. The fixed history semantics
 (`operation` and `revision`) render in dedicated columns, while transport/technical aliases such as
-`REV`, `REVTYPE`, and `revisionTypeCode` are omitted from the generated history list. A feature
-selection starts a fresh schema union, so new backend labels work without table-specific component
-code while sparse fields remain available during pagination. A failed page request clears visible
-rows but preserves the same-feature schema union so an exact retry cannot discard fields learned
-from earlier pages.
+`REV`, `REVTYPE`, and `revisionTypeCode` are omitted from the generated history list. History-only
+metadata whose normalized key begins with `CREATE` or `UPDATE` is also omitted, regardless of case
+or separator style. Those fields remain dynamic in the main source table and filters when supplied
+inside `originalData`. A feature selection starts a fresh schema union, so new backend labels work
+without table-specific component code while sparse fields remain available during pagination. A
+failed page request clears visible rows but preserves the same-feature schema union so an exact
+retry cannot discard fields learned from earlier pages.
+
+Changed history values are derived from the response rather than stored in the view model. Entries
+are ordered by `sequenceNumber`, then `revision`; every dynamic value is compared with the prior
+chronological entry. A WeakMap cache keeps template lookups inexpensive and preserves the correct
+highlight when the displayed history is sorted differently.
 
 Column type inference stops after finding the first non-null value for a field. A key seen only with
 null values is temporarily treated as text; the first later page containing a concrete value can
@@ -95,7 +102,8 @@ types do not silently replace it.
 
 ## Styling
 
-Global `src/styles.css` contains only Tailwind import, base page colors, and scrollbar styling.
-All audit presentation rules live in `audit-view.component.css` under Angular component encapsulation.
+Global `src/styles.css` contains only the Tailwind import, base page colors, and scrollbar styling.
+Reusable layout utilities live in the component template; complex audit presentation and behavior
+remain in `audit-view.component.css` under Angular component encapsulation.
 The Angular component schematic is configured with `type: component`, so future generated components
 use the `.component.ts`, `.component.html`, `.component.css`, and `.component.spec.ts` convention.
