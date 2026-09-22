@@ -749,8 +749,8 @@ describe("AuditViewComponent", () => {
         originalData: { ID: 1001, NAME: "No approval" },
         approval: {
           approvalRecordPresent: false,
-          makerUsername: null,
-          checkerUsername: null,
+          makerUsername: "must.not.render",
+          checkerUsername: "must.not.render",
         },
       },
       {
@@ -784,8 +784,10 @@ describe("AuditViewComponent", () => {
     await selectTable(fixture, "Position-Balance");
 
     const element = fixture.nativeElement as HTMLElement;
+    expect(component.showApprovalColumns).toBe(true);
     expect(element.textContent).not.toContain("Approval present");
     expect(element.textContent).not.toContain("Not present");
+    expect(element.textContent).not.toContain("must.not.render");
     expect(
       Array.from(element.querySelectorAll(".approval-maker")).map((cell) =>
         cell.textContent?.trim(),
@@ -807,6 +809,41 @@ describe("AuditViewComponent", () => {
     expect(component.filteredRows.map((row) => row.id)).toEqual([
       1003, 1001, 1002,
     ]);
+  });
+
+  it("hides maker and checker when the current API page has no approval record", async () => {
+    const fixture = await createFixture();
+    const component = fixture.componentInstance;
+    await selectTable(fixture, "Position-Balance");
+
+    expect(component.showApprovalColumns).toBe(true);
+    component.toggleSort("__APPROVAL_MAKER__");
+    expect(component.sortKey).toBe("__APPROVAL_MAKER__");
+
+    const response = createRecordsResponse(1, 10);
+    response.data.rows = response.data.rows.map((record) => ({
+      ...record,
+      approval: {
+        approvalRecordPresent: false,
+        makerUsername: null,
+        checkerUsername: null,
+      },
+    }));
+    recordsResponseOverride = of(response);
+
+    component.loadAuditRecords("Position-Balance", 1, 10);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(component.showApprovalColumns).toBe(false);
+    expect(component.sortKey).toBe("");
+    expect(element.querySelector(".approval-maker")).toBeNull();
+    expect(element.querySelector(".approval-checker")).toBeNull();
+    expect(
+      Array.from(element.querySelectorAll("thead .sort-button")).map((button) =>
+        button.textContent?.trim(),
+      ),
+    ).not.toEqual(expect.arrayContaining(["Maker", "Checker"]));
   });
 
   it("retries the exact failed page and page size", async () => {

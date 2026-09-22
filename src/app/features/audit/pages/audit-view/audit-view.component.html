@@ -692,42 +692,44 @@
                     </button>
                   </th>
                 }
-                <th
-                  scope="col"
-                  [attr.aria-sort]="getAriaSort('__APPROVAL_MAKER__')"
-                >
-                  <button
-                    type="button"
-                    class="sort-button"
-                    (click)="toggleSort('__APPROVAL_MAKER__')"
+                @if (showApprovalColumns) {
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="getAriaSort('__APPROVAL_MAKER__')"
                   >
-                    Maker
-                    <span class="sort-indicator" aria-hidden="true">
-                      <svg viewBox="0 0 12 16">
-                        <path class="sort-up" d="m6 1 4 5H2z"></path>
-                        <path class="sort-down" d="m6 15-4-5h8z"></path>
-                      </svg>
-                    </span>
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  [attr.aria-sort]="getAriaSort('__APPROVAL_CHECKER__')"
-                >
-                  <button
-                    type="button"
-                    class="sort-button"
-                    (click)="toggleSort('__APPROVAL_CHECKER__')"
+                    <button
+                      type="button"
+                      class="sort-button"
+                      (click)="toggleSort('__APPROVAL_MAKER__')"
+                    >
+                      Maker
+                      <span class="sort-indicator" aria-hidden="true">
+                        <svg viewBox="0 0 12 16">
+                          <path class="sort-up" d="m6 1 4 5H2z"></path>
+                          <path class="sort-down" d="m6 15-4-5h8z"></path>
+                        </svg>
+                      </span>
+                    </button>
+                  </th>
+                  <th
+                    scope="col"
+                    [attr.aria-sort]="getAriaSort('__APPROVAL_CHECKER__')"
                   >
-                    Checker
-                    <span class="sort-indicator" aria-hidden="true">
-                      <svg viewBox="0 0 12 16">
-                        <path class="sort-up" d="m6 1 4 5H2z"></path>
-                        <path class="sort-down" d="m6 15-4-5h8z"></path>
-                      </svg>
-                    </span>
-                  </button>
-                </th>
+                    <button
+                      type="button"
+                      class="sort-button"
+                      (click)="toggleSort('__APPROVAL_CHECKER__')"
+                    >
+                      Checker
+                      <span class="sort-indicator" aria-hidden="true">
+                        <svg viewBox="0 0 12 16">
+                          <path class="sort-up" d="m6 1 4 5H2z"></path>
+                          <path class="sort-down" d="m6 15-4-5h8z"></path>
+                        </svg>
+                      </span>
+                    </button>
+                  </th>
+                }
                 <th scope="col" [attr.aria-sort]="getAriaSort('__REVISIONS__')">
                   <button
                     type="button"
@@ -833,50 +835,50 @@
                       </span>
                     </td>
                   }
-                  <td class="approval-maker">
-                    <span
-                      class="cell-value"
-                      [class.cell-value--expandable]="
-                        isExpandableCellValue(row.approval.makerUsername)
-                      "
-                      [class.empty-value]="row.approval.makerUsername === null"
-                      [attr.title]="row.approval.makerUsername"
-                      [attr.tabindex]="
-                        isExpandableCellValue(row.approval.makerUsername)
-                          ? 0
-                          : null
-                      "
-                      (click)="
-                        isExpandableCellValue(row.approval.makerUsername) &&
-                          $event.stopPropagation()
-                      "
-                    >
-                      {{ formatCellValue(row.approval.makerUsername) }}
-                    </span>
-                  </td>
-                  <td class="approval-checker">
-                    <span
-                      class="cell-value"
-                      [class.cell-value--expandable]="
-                        isExpandableCellValue(row.approval.checkerUsername)
-                      "
-                      [class.empty-value]="
-                        row.approval.checkerUsername === null
-                      "
-                      [attr.title]="row.approval.checkerUsername"
-                      [attr.tabindex]="
-                        isExpandableCellValue(row.approval.checkerUsername)
-                          ? 0
-                          : null
-                      "
-                      (click)="
-                        isExpandableCellValue(row.approval.checkerUsername) &&
-                          $event.stopPropagation()
-                      "
-                    >
-                      {{ formatCellValue(row.approval.checkerUsername) }}
-                    </span>
-                  </td>
+                  @if (showApprovalColumns) {
+                    @let makerUsername =
+                      getApprovalUsername(row, "makerUsername");
+                    <td class="approval-maker">
+                      <span
+                        class="cell-value"
+                        [class.cell-value--expandable]="
+                          isExpandableCellValue(makerUsername)
+                        "
+                        [class.empty-value]="makerUsername === null"
+                        [attr.title]="makerUsername"
+                        [attr.tabindex]="
+                          isExpandableCellValue(makerUsername) ? 0 : null
+                        "
+                        (click)="
+                          isExpandableCellValue(makerUsername) &&
+                            $event.stopPropagation()
+                        "
+                      >
+                        {{ formatCellValue(makerUsername) }}
+                      </span>
+                    </td>
+                    @let checkerUsername =
+                      getApprovalUsername(row, "checkerUsername");
+                    <td class="approval-checker">
+                      <span
+                        class="cell-value"
+                        [class.cell-value--expandable]="
+                          isExpandableCellValue(checkerUsername)
+                        "
+                        [class.empty-value]="checkerUsername === null"
+                        [attr.title]="checkerUsername"
+                        [attr.tabindex]="
+                          isExpandableCellValue(checkerUsername) ? 0 : null
+                        "
+                        (click)="
+                          isExpandableCellValue(checkerUsername) &&
+                            $event.stopPropagation()
+                        "
+                      >
+                        {{ formatCellValue(checkerUsername) }}
+                      </span>
+                    </td>
+                  }
                   <td>
                     <span
                       class="revision-count"
@@ -900,7 +902,11 @@
 
                 @if (canExpandRow(row) && isRowExpanded(row.id)) {
                   <tr class="history-row">
-                    <td [attr.colspan]="columns.length + 6">
+                    <td
+                      [attr.colspan]="
+                        columns.length + 4 + (showApprovalColumns ? 2 : 0)
+                      "
+                    >
                       <div class="history-content">
                         <header
                           class="mb-[0.7rem] flex items-center justify-between gap-4"

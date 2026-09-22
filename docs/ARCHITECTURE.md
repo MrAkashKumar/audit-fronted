@@ -34,7 +34,7 @@ flowchart LR
 - Owns loading, success, error, selection, filter, sort, expansion, and pagination state.
 - Uses server pagination metadata as authoritative.
 - Derives source columns from `originalData`.
-- Maps `approval` to fixed main-table Maker and Checker columns.
+- Maps `approval` to conditional main-table Maker and Checker columns.
 - Derives history columns from each row's `auditHistory`.
 - Exposes only source columns to the filter builder.
 
@@ -92,8 +92,10 @@ failed page request clears visible rows but preserves the same-feature schema un
 retry cannot discard fields learned from earlier pages.
 
 Approval metadata is separate from the dynamic source schema. Every main row renders the response's
-`makerUsername` and `checkerUsername` values, while `approvalRecordPresent` remains model-only,
-filters remain limited to `originalData`, and expanded history remains limited to `auditHistory`.
+`makerUsername` and `checkerUsername` values only when at least one current-page row has
+`approvalRecordPresent: true`. An all-false page hides both columns; a mixed page keeps both columns
+aligned and renders em dashes for false rows. Filters remain limited to `originalData`, and expanded
+history remains limited to `auditHistory`.
 
 Changed history values are derived from the response rather than stored in the view model. Entries
 are ordered by `sequenceNumber`, then `revision`; every dynamic value is compared with the prior

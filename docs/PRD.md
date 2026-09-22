@@ -13,7 +13,8 @@ each selected table's current records and revision history without table-specifi
 4. On selection, call
    `GET /api/v1/audit/{encodedLabel}?pageNo=0&pageSize={selectedSize}`.
 5. Rebuild main and history schemas from the selected response.
-6. Show maker and checker metadata in the main source table only.
+6. Show Maker and Checker in the main source table only when the current page contains at least one
+   row with `approvalRecordPresent: true`.
 7. Keep filters limited to source fields from `originalData`.
 8. Allow independent AND/OR joins for added filter conditions.
 9. Keep server pagination dynamic and reset to page zero when page size changes.

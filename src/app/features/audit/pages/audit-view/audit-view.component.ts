@@ -209,6 +209,17 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     return this.totalRecordCount === 1 ? "Total record" : "Total records";
   }
 
+  get showApprovalColumns(): boolean {
+    return this.rows.some((row) => row.approval.approvalRecordPresent === true);
+  }
+
+  getApprovalUsername(
+    row: AuditViewRow,
+    field: "makerUsername" | "checkerUsername",
+  ): string | null {
+    return row.approval.approvalRecordPresent ? row.approval[field] : null;
+  }
+
   get filteredRows(): AuditViewRow[] {
     const signature = [
       this.sortKey,
@@ -334,6 +345,13 @@ export class AuditViewComponent implements OnInit, OnDestroy {
           this.rows = response.data.rows.map((record) =>
             this.toViewRow(record),
           );
+          if (
+            !this.showApprovalColumns &&
+            (this.sortKey === SORT_APPROVAL_MAKER ||
+              this.sortKey === SORT_APPROVAL_CHECKER)
+          ) {
+            this.resetSorting();
+          }
           this.isRecordsLoading = false;
           this.changeDetector.markForCheck();
         },
@@ -1294,11 +1312,11 @@ export class AuditViewComponent implements OnInit, OnDestroy {
     }
 
     if (key === SORT_APPROVAL_MAKER) {
-      return row.approval.makerUsername;
+      return this.getApprovalUsername(row, "makerUsername");
     }
 
     if (key === SORT_APPROVAL_CHECKER) {
-      return row.approval.checkerUsername;
+      return this.getApprovalUsername(row, "checkerUsername");
     }
 
     if (key === SORT_RECORD_STATE) {

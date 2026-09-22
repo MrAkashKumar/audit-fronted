@@ -30,7 +30,8 @@ fixed cross-feature part of the record contract.
 - `data.tableLabels` supplies the searchable feature selector.
 - The exact selected API label is sent to the record endpoint.
 - `originalData` supplies main-table columns and filter fields.
-- `approval` supplies main-table Maker and Checker values only.
+- `approval` conditionally supplies main-table Maker and Checker values when at least one current
+  page row has `approvalRecordPresent: true`.
 - `auditHistory` supplies expanded-history columns.
 - Response pagination metadata controls the footer and page navigation.
 - A newly returned backend label or column requires no component-template change.
@@ -59,7 +60,8 @@ local JSON paths.
 4. Change page size and confirm the request resets to `pageNo=0`.
 5. Navigate pages and confirm `pageNo` and `pageSize` match the controls.
 6. Confirm main columns and filter fields match `originalData`.
-7. Confirm Maker and Checker match each row's `approval` object.
+7. Confirm Maker and Checker are hidden for an all-false page, visible for a mixed/true page, and
+   match each row's `approval` object.
 8. Expand history and confirm its columns match `auditHistory` without approval fields.
 9. Force an HTTP error and confirm the UI displays Retry without local data.
 10. Run tests, strict TypeScript checks, formatting verification, and the production build.
