@@ -1,4 +1,6 @@
-<main class="audit-view-page">
+<main
+  class="audit-view-page mx-auto w-[min(calc(100%_-_2rem),_1800px)] pt-6 pb-10"
+>
   <section
     class="table-picker relative z-[4]"
     aria-labelledby="audit-table-title"
@@ -18,7 +20,7 @@
         (focusout)="onTablePickerFocusOut($event)"
       >
         <div
-          class="picker-search flex min-h-[3.75rem] items-center gap-[0.2rem] rounded-[0.9rem] border border-[#8b7645] bg-[linear-gradient(115deg,_#292723_0%,_#24221f_100%)] py-0 pr-[0.75rem] pl-[0.55rem] text-[#edbb3f] shadow-[0_0.4rem_1.1rem_rgb(0_0_0_/_16%)]"
+          class="picker-search flex min-h-[3.75rem] items-center gap-[0.2rem] rounded-[0.9rem] border border-[#8b7645] bg-[linear-gradient(115deg,_#292723_0%,_#24221f_100%)] py-0 pr-[0.75rem] pl-[0.55rem] text-[#edbb3f] shadow-[0_0.4rem_1.1rem_rgb(0_0_0_/_16%)] focus-within:border-[#f4c453] focus-within:shadow-[0_0_0_3px_rgb(244_196_83_/_18%),_0_0.65rem_1.4rem_rgb(0_0_0_/_22%)]"
         >
           <label class="sr-only" for="audit-view-table-search"
             >Search audit features</label
@@ -81,19 +83,25 @@
         @if (isTableMenuOpen) {
           <div
             id="audit-view-table-options"
-            class="table-options"
+            class="table-options absolute top-[calc(100%_+_0.55rem)] right-0 left-0 z-10 max-h-[min(24rem,_55vh)] overflow-y-auto rounded-[0.8rem] border border-[#4b463d] bg-[#272421] p-[0.65rem] shadow-[0_22px_46px_rgb(0_0_0_/_42%)]"
             role="listbox"
           >
             @if (areTableLabelsLoading) {
-              <div class="picker-state">Loading audit features…</div>
+              <div class="picker-state p-[1.2rem] text-center text-[#aaa49a]">
+                Loading audit features…
+              </div>
             } @else if (tableLabelsErrorMessage) {
-              <div class="picker-state picker-state--error">
+              <div
+                class="picker-state picker-state--error p-[1.2rem] text-center text-[#ffaaa0]"
+              >
                 {{ tableLabelsErrorMessage }}
               </div>
             } @else if (tableLabels.length === 0) {
-              <div class="picker-state">No audit features available.</div>
+              <div class="picker-state p-[1.2rem] text-center text-[#aaa49a]">
+                No audit features available.
+              </div>
             } @else if (filteredTableLabels.length === 0) {
-              <div class="picker-state">
+              <div class="picker-state p-[1.2rem] text-center text-[#aaa49a]">
                 No features match “{{ tableSearchQuery }}”.
               </div>
             } @else {
@@ -105,7 +113,7 @@
                 <button
                   [id]="'audit-view-table-option-' + optionIndex"
                   type="button"
-                  class="table-option"
+                  class="table-option flex w-full items-center gap-[0.9rem] rounded-[0.7rem] border-y-0 border-r-0 border-l-[3px] border-l-transparent bg-transparent px-[0.85rem] py-[0.7rem] text-left text-[#ede9e2]"
                   role="option"
                   tabindex="-1"
                   [attr.aria-selected]="selectedTableLabel === tableLabel"
@@ -118,16 +126,32 @@
                   (mouseenter)="setActiveTableOption(optionIndex)"
                   (click)="selectTable(tableLabel)"
                 >
-                  <span class="table-initials">{{
-                    getTableInitials(tableLabel)
-                  }}</span>
-                  <span class="table-option-copy">
-                    <strong>{{ getTableDisplayName(tableLabel) }}</strong>
-                    <small>{{ tableLabel }}</small>
+                  <span
+                    class="table-initials grid size-[2.9rem] shrink-0 place-items-center rounded-[0.65rem] bg-[#3a3225] text-[0.75rem] font-black text-[#efbf49]"
+                    >{{ getTableInitials(tableLabel) }}</span
+                  >
+                  <span
+                    class="table-option-copy flex min-w-0 flex-1 flex-col gap-[0.2rem]"
+                  >
+                    <strong
+                      class="overflow-hidden text-ellipsis whitespace-nowrap"
+                      >{{ getTableDisplayName(tableLabel) }}</strong
+                    >
+                    <small
+                      class="overflow-hidden text-ellipsis whitespace-nowrap text-[#9e988f]"
+                      >{{ tableLabel }}</small
+                    >
                   </span>
                   @if (selectedTableLabel === tableLabel) {
-                    <span class="current-selection">Current</span>
-                    <span class="selection-check" aria-hidden="true">✓</span>
+                    <span
+                      class="current-selection rounded-full bg-[#153e32] px-[0.7rem] py-[0.4rem] text-[0.7rem] font-[850] text-[#66dfa7]"
+                      >Current</span
+                    >
+                    <span
+                      class="selection-check text-[1.15rem] font-black text-[#66dfa7]"
+                      aria-hidden="true"
+                      >✓</span
+                    >
                   }
                 </button>
               }
@@ -248,7 +272,7 @@
 
         <button
           type="button"
-          class="filter-button"
+          class="filter-button inline-flex min-h-[3.15rem] items-center gap-[0.55rem] rounded-full border border-[#8d877d] bg-transparent px-[1.35rem] font-[750] text-[#d5da00]"
           [disabled]="isRecordsLoading || !recordsResponse"
           [class.filter-button--active]="
             isRecordFilterOpen || activeFilterCount > 0
@@ -269,7 +293,10 @@
           </svg>
           {{ isRecordFilterOpen ? "Hide filters" : "Filter records" }}
           @if (!isRecordFilterOpen && activeFilterCount > 0) {
-            <small>{{ activeFilterCount }}</small>
+            <small
+              class="grid size-[1.35rem] min-w-[1.35rem] place-items-center rounded-full bg-[#f2c34f] text-[#2b2518]"
+              >{{ activeFilterCount }}</small
+            >
           }
         </button>
       </header>
@@ -301,14 +328,14 @@
             >
               <button
                 type="button"
-                class="add-condition"
+                class="add-condition min-h-[2.85rem] rounded-full border border-[#8d877d] bg-transparent px-[1.15rem] font-[750] text-[#d5da00]"
                 (click)="addFilterCondition()"
               >
                 + Add condition
               </button>
               <button
                 type="button"
-                class="clear-filters"
+                class="clear-filters min-h-[2.85rem] rounded-full border border-transparent bg-transparent px-[0.7rem] font-[750] text-[#d5da00]"
                 (click)="clearFilters()"
               >
                 Clear all
@@ -322,13 +349,20 @@
               track condition.id;
               let conditionIndex = $index
             ) {
-              <div class="filter-condition">
-                <div class="condition-join-cell">
+              <div
+                class="filter-condition relative grid grid-cols-[minmax(5.75rem,_auto)_minmax(10rem,_0.95fr)_minmax(10rem,_0.72fr)_minmax(13rem,_1.45fr)_2.2rem] gap-[0.55rem] rounded-[0.7rem] border border-[#484238] bg-[#24211e] p-[0.6rem] [grid-template-areas:'join_field_operator_value_remove']"
+              >
+                <div
+                  class="condition-join-cell flex min-h-[var(--audit-control-height)] items-center border-l-2 border-l-[#f28b49] pl-[0.45rem] [grid-area:join]"
+                >
                   @if (conditionIndex === 0) {
-                    <strong class="condition-join">Where</strong>
+                    <strong
+                      class="condition-join text-[0.72rem] tracking-[0.08em] text-[#f28b49] uppercase"
+                      >Where</strong
+                    >
                   } @else {
                     <div
-                      class="condition-join-toggle"
+                      class="condition-join-toggle grid w-full max-w-[5.9rem] grid-cols-[repeat(2,minmax(2.65rem,1fr))] rounded-full border border-[#746443] bg-[#191714] p-[0.2rem] shadow-[inset_0_0_0_1px_rgb(242_197_79_/_5%)]"
                       role="group"
                       [attr.aria-label]="
                         'Join condition ' +
@@ -339,6 +373,7 @@
                       <button
                         type="button"
                         data-join="AND"
+                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6]"
                         [class.condition-join-option--active]="
                           condition.join === 'AND'
                         "
@@ -350,6 +385,7 @@
                       <button
                         type="button"
                         data-join="OR"
+                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6]"
                         [class.condition-join-option--active]="
                           condition.join === 'OR'
                         "
@@ -363,18 +399,21 @@
                 </div>
 
                 <div
-                  class="filter-control filter-select filter-field"
+                  class="filter-control filter-select filter-field relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:field]"
                   [class.filter-select--open]="
                     isFilterFieldMenuOpen(condition.id)
                   "
                   (focusout)="onFilterFieldFocusOut(condition.id, $event)"
                 >
-                  <span class="control-label">Field</span>
+                  <span
+                    class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
+                    >Field</span
+                  >
                   <button
                     #fieldTrigger
                     [id]="'filter-field-trigger-' + condition.id"
                     type="button"
-                    class="select-trigger field-trigger"
+                    class="select-trigger field-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0"
                     role="combobox"
                     aria-haspopup="listbox"
                     [class.select-trigger--placeholder]="!condition.fieldKey"
@@ -395,7 +434,7 @@
                   >
                     <span>{{ getFilterFieldLabel(condition.fieldKey) }}</span>
                     <span
-                      class="select-caret"
+                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae]"
                       [class.select-caret--open]="
                         isFilterFieldMenuOpen(condition.id)
                       "
@@ -406,7 +445,7 @@
                   @if (isFilterFieldMenuOpen(condition.id)) {
                     <div
                       [id]="'filter-field-options-' + condition.id"
-                      class="select-options field-options"
+                      class="select-options field-options absolute top-[calc(100%_+_0.45rem)] left-0 z-12 grid max-h-[min(20rem,_48vh)] w-full min-w-full max-w-[min(22rem,_calc(100vw_-_3rem))] overflow-y-auto rounded-[0.65rem] border border-[#575147] bg-[#1d1d18] p-[0.35rem] shadow-[0_1.25rem_2.8rem_rgb(0_0_0_/_45%)] [scrollbar-color:#80796f_#24231f] [scrollbar-width:thin]"
                       role="listbox"
                       [attr.aria-label]="
                         'Fields for filter ' + (conditionIndex + 1)
@@ -422,7 +461,7 @@
                             'filter-field-' + condition.id + '-' + fieldIndex
                           "
                           type="button"
-                          class="select-option field-option"
+                          class="select-option field-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8]"
                           role="option"
                           tabindex="-1"
                           [attr.data-field]="field.key"
@@ -446,7 +485,9 @@
                         >
                           <span>{{ field.label }}</span>
                           @if (condition.fieldKey === field.key) {
-                            <span class="select-check" aria-hidden="true"
+                            <span
+                              class="select-check text-[1.15rem] leading-none text-[#f3efdc]"
+                              aria-hidden="true"
                               >✓</span
                             >
                           }
@@ -457,17 +498,20 @@
                 </div>
 
                 <div
-                  class="filter-control filter-select filter-operator"
+                  class="filter-control filter-select filter-operator relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:operator]"
                   [class.filter-select--open]="
                     isFilterOperatorMenuOpen(condition.id)
                   "
                   (focusout)="onFilterOperatorFocusOut(condition.id, $event)"
                 >
-                  <span class="control-label">Condition</span>
+                  <span
+                    class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
+                    >Condition</span
+                  >
                   <button
                     #operatorTrigger
                     type="button"
-                    class="select-trigger operator-trigger"
+                    class="select-trigger operator-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0"
                     role="combobox"
                     aria-haspopup="listbox"
                     [attr.aria-label]="
@@ -495,7 +539,7 @@
                       getFilterOperatorLabel(condition.operator)
                     }}</span>
                     <span
-                      class="select-caret"
+                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae]"
                       [class.select-caret--open]="
                         isFilterOperatorMenuOpen(condition.id)
                       "
@@ -506,7 +550,7 @@
                   @if (isFilterOperatorMenuOpen(condition.id)) {
                     <div
                       [id]="'filter-operator-options-' + condition.id"
-                      class="select-options operator-options"
+                      class="select-options operator-options absolute top-[calc(100%_+_0.45rem)] left-0 z-12 grid max-h-[min(20rem,_48vh)] w-[max(100%,_18rem)] min-w-full max-w-[min(22rem,_calc(100vw_-_3rem))] overflow-y-auto rounded-[0.65rem] border border-[#575147] bg-[#1d1d18] p-[0.35rem] shadow-[0_1.25rem_2.8rem_rgb(0_0_0_/_45%)] [scrollbar-color:#80796f_#24231f] [scrollbar-width:thin]"
                       role="listbox"
                       [attr.aria-label]="
                         'Conditions for filter ' + (conditionIndex + 1)
@@ -525,7 +569,7 @@
                             operatorIndex
                           "
                           type="button"
-                          class="select-option operator-option"
+                          class="select-option operator-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8]"
                           role="option"
                           tabindex="-1"
                           [attr.data-operator]="operator.value"
@@ -549,7 +593,9 @@
                         >
                           <span>{{ operator.label }}</span>
                           @if (condition.operator === operator.value) {
-                            <span class="select-check" aria-hidden="true"
+                            <span
+                              class="select-check text-[1.15rem] leading-none text-[#f3efdc]"
+                              aria-hidden="true"
                               >✓</span
                             >
                           }
@@ -561,9 +607,15 @@
 
                 @if (hasFilterValueInput(condition)) {
                   @if (isBooleanFilter(condition)) {
-                    <label class="filter-control filter-value">
-                      <span class="control-label">Value</span>
+                    <label
+                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:value]"
+                    >
+                      <span
+                        class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
+                        >Value</span
+                      >
                       <select
+                        class="min-h-[var(--audit-control-height)] w-full border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-[#ded9d1] outline-0"
                         [value]="condition.value"
                         (change)="onFilterValueChange(condition, $event)"
                       >
@@ -573,9 +625,15 @@
                       </select>
                     </label>
                   } @else {
-                    <label class="filter-control filter-value">
-                      <span class="control-label">Value</span>
+                    <label
+                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:value]"
+                    >
+                      <span
+                        class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
+                        >Value</span
+                      >
                       <input
+                        class="min-h-[var(--audit-control-height)] w-full border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-[#ded9d1] outline-0"
                         [type]="getFilterInputType(condition)"
                         [value]="condition.value"
                         placeholder="Enter text, number, or date"
@@ -584,15 +642,20 @@
                     </label>
                   }
                 } @else {
-                  <div class="filter-no-value">
-                    <span class="control-label">Value</span>
+                  <div
+                    class="filter-no-value relative flex min-h-[var(--audit-control-height)] min-w-0 items-center rounded-[0.55rem] border border-[#615744] bg-[#292622] px-[0.9rem] text-[#958f87] [grid-area:value]"
+                  >
+                    <span
+                      class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
+                      >Value</span
+                    >
                     <span>No value required</span>
                   </div>
                 }
 
                 <button
                   type="button"
-                  class="remove-condition"
+                  class="remove-condition self-center border-0 bg-transparent p-[0.4rem] text-[1.45rem] text-[#bdb7ae] [grid-area:remove]"
                   [attr.aria-label]="
                     'Remove filter condition ' + (conditionIndex + 1)
                   "
@@ -618,16 +681,25 @@
           class="panel-state grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#a9a39a]"
           aria-live="polite"
         >
-          <span class="loading-ring" aria-hidden="true"></span>
+          <span
+            class="loading-ring size-[1.8rem] rounded-full border-[3px] border-[#474139] border-t-[#edbb43]"
+            aria-hidden="true"
+          ></span>
           <strong>Loading audit records…</strong>
         </div>
       } @else if (recordsErrorMessage) {
         <div
-          class="panel-state panel-state--error grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#a9a39a]"
+          class="panel-state panel-state--error grid min-h-[13rem] place-content-center justify-items-center gap-[0.7rem] text-center text-[#ff9b91]"
           role="alert"
         >
           <strong>{{ recordsErrorMessage }}</strong>
-          <button type="button" (click)="retryAuditRecords()">Retry</button>
+          <button
+            type="button"
+            class="border-0 bg-transparent font-[850] text-[#dbb143]"
+            (click)="retryAuditRecords()"
+          >
+            Retry
+          </button>
         </div>
       } @else if (filteredRows.length === 0) {
         <div
@@ -650,13 +722,15 @@
         </div>
       } @else {
         <div
-          class="records-table-wrap scroll-table-wrap"
+          class="records-table-wrap scroll-table-wrap max-h-[min(68vh,_48rem)] overflow-auto outline-none focus-visible:shadow-[inset_0_0_0_2px_#d5a93c] [container-type:inline-size] [overscroll-behavior-inline:contain] [scrollbar-color:transparent_transparent] [scrollbar-width:thin]"
           role="region"
           tabindex="0"
           aria-label="Audit records"
           (wheel)="onTableWheel($event)"
         >
-          <table class="records-table data-table">
+          <table
+            class="records-table data-table w-max min-w-full border-collapse text-left"
+          >
             <thead>
               <tr>
                 <th scope="col"><span class="sr-only">Expand</span></th>
@@ -777,7 +851,7 @@
                     @if (canExpandRow(row)) {
                       <button
                         type="button"
-                        class="expand-button"
+                        class="expand-button grid size-[2.25rem] place-items-center rounded-[0.55rem] border border-[#625742] bg-[#28241f] text-[#e1b442]"
                         [attr.aria-expanded]="isRowExpanded(row.id)"
                         [attr.aria-label]="
                           (isRowExpanded(row.id) ? 'Collapse' : 'Expand') +
@@ -787,6 +861,7 @@
                         (click)="$event.stopPropagation(); toggleRow(row.id)"
                       >
                         <svg
+                          class="size-4 [transition:transform_140ms_ease] motion-reduce:[transition:none]"
                           viewBox="0 0 20 20"
                           fill="none"
                           stroke="currentColor"
@@ -799,7 +874,9 @@
                       </button>
                     }
                   </td>
-                  <td class="record-id">#{{ row.id }}</td>
+                  <td class="record-id font-[850] text-[#e3b748]">
+                    #{{ row.id }}
+                  </td>
                   @for (column of columns; track column.key) {
                     @let cellValue = getCellValue(row, column);
                     <td>
@@ -881,7 +958,7 @@
                   }
                   <td>
                     <span
-                      class="revision-count"
+                      class="revision-count grid size-[2.2rem] place-items-center rounded-[0.55rem] bg-[#f2c34f] font-black text-[#2c2416] shadow-[0_0.25rem_0.8rem_rgb(242_195_79_/_18%)]"
                       [class.revision-count--muted]="row.revisionCount <= 1"
                     >
                       {{ row.revisionCount }}
@@ -889,12 +966,15 @@
                   </td>
                   <td>
                     <span
-                      class="record-state"
+                      class="record-state inline-flex items-center gap-[0.45rem] rounded-full bg-[#143d31] px-[0.75rem] py-[0.48rem] text-[0.75rem] font-[850] text-[#64dda5]"
                       [class.record-state--audit]="
                         row.recordState === 'Audit only'
                       "
                     >
-                      <span aria-hidden="true"></span>
+                      <span
+                        class="size-[0.45rem] rounded-full bg-current"
+                        aria-hidden="true"
+                      ></span>
                       {{ row.recordState }}
                     </span>
                   </td>
@@ -907,7 +987,9 @@
                         columns.length + 4 + (showApprovalColumns ? 2 : 0)
                       "
                     >
-                      <div class="history-content">
+                      <div
+                        class="history-content relative w-[100cqi] min-w-0 pt-[0.85rem] pr-4 pb-[0.9rem] pl-[2.75rem] shadow-[inset_4px_0_#d5a93c] before:pointer-events-none before:absolute before:top-0 before:left-[1.25rem] before:h-[1.75rem] before:w-[1.25rem] before:rounded-bl-[0.85rem] before:border-b before:border-l before:border-[#625742] before:content-['']"
+                      >
                         <header
                           class="mb-[0.7rem] flex items-center justify-between gap-4"
                         >
@@ -922,7 +1004,7 @@
                           </div>
                         </header>
                         <div
-                          class="history-table-wrap scroll-table-wrap"
+                          class="history-table-wrap scroll-table-wrap max-h-[min(55vh,_32rem)] overflow-auto rounded-[0.7rem] border border-[#403b33] outline-none focus-visible:shadow-[inset_0_0_0_2px_#d5a93c] [overscroll-behavior-inline:contain] [scrollbar-color:transparent_transparent] [scrollbar-width:thin]"
                           role="region"
                           tabindex="0"
                           (wheel)="onTableWheel($event)"
@@ -930,7 +1012,9 @@
                             'Audit history for record ' + row.id
                           "
                         >
-                          <table class="history-table data-table">
+                          <table
+                            class="history-table data-table w-max min-w-full border-collapse bg-[#211f1c] text-left"
+                          >
                             <thead>
                               <tr>
                                 <th
@@ -1041,9 +1125,18 @@
                                 >
                                   <td>
                                     <span
-                                      [class]="
-                                        'operation-badge operation-badge--' +
-                                        operationTone
+                                      class="operation-badge inline-flex min-w-[4.5rem] items-center justify-center rounded-full bg-[#35312c] px-[0.55rem] py-[0.35rem] text-center text-[0.72rem] font-black text-[#c6c0b7]"
+                                      [class.operation-badge--insert]="
+                                        operationTone === 'insert'
+                                      "
+                                      [class.operation-badge--update]="
+                                        operationTone === 'update'
+                                      "
+                                      [class.operation-badge--delete]="
+                                        operationTone === 'delete'
+                                      "
+                                      [class.operation-badge--unknown]="
+                                        operationTone === 'unknown'
                                       "
                                       [attr.title]="
                                         operationTone === 'delete'
@@ -1063,7 +1156,9 @@
                                       {{ history.operation }}
                                     </span>
                                   </td>
-                                  <td class="history-revision">
+                                  <td
+                                    class="history-revision font-[850]! text-[#e6b94a]!"
+                                  >
                                     #{{ history.revision }}
                                   </td>
                                   @for (
@@ -1182,7 +1277,7 @@
               {{ recordsResponse.data.totalElements }}
             </span>
             <div
-              class="page-buttons flex items-center gap-[0.35rem]"
+              class="page-buttons flex items-center gap-[0.35rem] [&_button]:min-w-[1.8rem] [&_button]:border-0 [&_button]:bg-transparent [&_button]:p-[0.3rem] [&_button]:font-[850] [&_button]:text-[#dbb143] [&_button:disabled]:cursor-not-allowed [&_button:disabled]:text-[#615c55]"
               aria-label="Pagination"
             >
               <button
