@@ -2,8 +2,8 @@
 
 ## Document status
 
-- Status: Initial safe optimization implemented on 2026-09-24
-- Implemented scope: proven redundancies and low-risk static utility migration
+- Status: Final safe optimization implemented and verified on 2026-09-24
+- Implemented scope: proven redundancies, static utilities, and literal Tailwind state variants
 - Primary feature: `src/app/features/audit/pages/audit-view`
 - Visual references: `IMG_8727.HEIC`, `IMG_8728.HEIC`, and `IMG_8724.heic`
 
@@ -55,12 +55,12 @@ use Angular, Tailwind, and the dependencies that are already present; it must no
 10. Tailwind classes must be literal in the template. Runtime-generated Tailwind class names are not
     allowed because they may not be included in the production output.
 
-## 4. In scope for a later implementation
+## 4. Implemented scope
 
 - Remove declarations that are demonstrably redundant with Tailwind Preflight or an existing literal
   utility already present on the same element.
-- Move simple, static, single-element presentation declarations to literal Tailwind utilities when the
-  mapping is exact and improves ownership.
+- Move simple, static, single-element presentation declarations and exact self/descendant state variants
+  to literal Tailwind utilities when the mapping is exact and improves ownership.
 - Preserve semantic class hooks while migrating presentation declarations.
 - Retain complex or behavior-dependent rules in `audit-view.component.css`.
 - Measure source CSS and production output before and after each small migration batch.
@@ -123,20 +123,22 @@ These elements are suitable because their base presentation is local to a single
 depend on complex descendants or multiple runtime states. Existing semantic class names must remain
 where tests, bindings, or readable DOM inspection benefit from them.
 
-### 6.4 Phase 3: optional static base migrations
+### 6.4 Phase 3: migrate exact literal state variants
 
-The following groups may be considered only after Phase 2 is visually identical and only if the result
-is clearer than the current CSS:
+After Phase 2 passed, the following groups were migrated with literal Tailwind variants while retaining
+their semantic Angular class bindings:
 
-- Table-options popup base geometry.
-- Table-option base geometry.
-- Filter-button base geometry.
-- Select-trigger and select-option base geometry.
-- Expand-button base geometry.
-- Static badge base geometry.
+- Table-option hover, active, and selected states.
+- Filter-button hover, active, pressed, and disabled states.
+- Filter field/operator open, focus, placeholder, caret, and option states.
+- Per-condition AND/OR active states.
+- Expand-button chevron state and record badge modifiers.
+- Long-cell focus expansion, empty values, and source value badges.
+- History change/delete states and operation badge modifiers.
+- Loading animation and reduced-motion behavior.
 
-Hover, focus, open, selected, disabled, active, and dynamic modifier rules must remain component-scoped.
-If a migration creates an unreadable class string or more specificity coupling, keep the existing CSS.
+The Angular bindings still toggle the same semantic class names. Tailwind provides only their visual
+declarations, so TypeScript behavior and test hooks remain unchanged.
 
 ### 6.5 Phase 4: verify and report
 
@@ -150,19 +152,17 @@ If a migration creates an unreadable class string or more specificity coupling, 
 
 ## 7. CSS that must remain component-specific
 
-The following behavior-heavy styles should not be moved merely to reduce the stylesheet size:
+The following behavior-heavy styles remain component-specific because moving them would reduce clarity
+or risk changing cascade, sizing, or browser-specific behavior:
 
-- Host-level audit typography/token and component-scoped focus policy.
-- Compound dropdown, filter, open, selected, disabled, active, hover, and focus selectors.
+- Host-level audit typography and the shared control-height token.
 - Filter-condition grid areas and their responsive rearrangement.
 - Independent source-table and audit-history scroll ownership.
 - Hover/focus-only scrollbar reveal, including vendor pseudo-elements, `:has()`, and `:is()` selectors.
 - Table descendant sizing, sticky headers, row states, and ARIA-sort indicators.
-- Expandable long-cell focus behavior.
-- Audit-history tree connector pseudo-element and container-query width.
-- History-table boundaries, changed-value highlighting, and deleted-row highlighting.
-- Dynamically composed operation badge modifiers for insert, update, delete, and unknown operations.
-- Loading animation, transitions, and reduced-motion overrides.
+- History-row containment and history-table column boundaries.
+- Exact inclusive responsive breakpoints at 1100 px, 760 px, and 560 px.
+- Sort-indicator transition and its reduced-motion override.
 
 Moving these rules into the template would spread a single interaction across multiple elements, make the
 responsive behavior harder to review, or risk changing specificity and cascade order.
@@ -248,41 +248,55 @@ Additionally:
 3. `src/styles.css` and `package.json` are byte-for-byte unchanged.
 4. No dependency or lockfile change occurs.
 5. Only exact Tailwind utilities from the existing toolchain are used.
-6. Complex state, table, history, scrollbar, responsive, and accessibility styles remain component-scoped.
+6. Structural table, scrollbar, responsive, and ARIA relationship styles remain component-scoped.
 7. Every removed declaration is documented with evidence that it was redundant.
 8. No selector is removed solely on the basis of static-search output.
 9. Template readability does not materially deteriorate.
 10. Tests, strict TypeScript compilation, production build, visual checks, and interaction checks pass.
 
-## 13. Recommended implementation decision
+## 13. Final implementation decision
 
-Proceed incrementally after this PRD is approved. Start with the five proven declaration-level
-redundancies, validate, then migrate only the low-risk static group in small batches. Do not attempt a
-full Tailwind conversion of the 963-line component stylesheet: much of it encodes genuine component
-behavior and keeping it in scoped CSS is both safer and clearer.
+Stop at the current boundary. The remaining 230 lines are structural or browser-specific rules for
+dynamic tables, nested scrollbar ownership, ARIA sorting, and exact inclusive responsive breakpoints.
+Moving them into the template would not be a meaningful optimization and would increase regression risk.
 
 ## 14. Implemented result
 
 The optimization migrated static presentation for the page shell, feature menu, filter controls and
 menus, condition controls, source/history table shells, expansion button, record badges, operation badge,
-loading indicator, and error state. Stateful semantic classes and every behavior-heavy selector were
-retained.
+loading indicator, and error state. A second reviewed pass migrated exact literal state variants while
+retaining their semantic class hooks. Structural and browser-specific selectors remain scoped.
 
-| Measurement                   |   Before |    After |      Difference |
-| ----------------------------- | -------: | -------: | --------------: |
-| Component CSS lines           |      963 |      463 |   -500 (-51.9%) |
-| Component CSS bytes           |   17,113 |    8,194 | -8,919 (-52.1%) |
-| Template lines                |    1,262 |    1,357 |             +95 |
-| Combined HTML and CSS bytes   |   70,455 |   71,698 |          +1,243 |
-| Lazy audit component chunk    | 76.27 kB | 76.34 kB |        +0.07 kB |
-| Generated global Tailwind CSS | 15.38 kB | 26.16 kB |       +10.78 kB |
-| Estimated initial transfer    | 67.97 kB | 69.20 kB |        +1.23 kB |
+| Measurement                   |   Before | Final result |       Difference |
+| ----------------------------- | -------: | -----------: | ---------------: |
+| Component CSS lines           |      963 |          230 |    -733 (-76.1%) |
+| Component CSS bytes           |   17,113 |        4,088 | -13,025 (-76.1%) |
+| Template lines                |    1,262 |        1,358 |              +96 |
+| Combined HTML and CSS bytes   |   70,455 |       72,912 |           +2,457 |
+| Lazy audit component chunk    | 76.27 kB |     77.80 kB |         +1.53 kB |
+| Generated global Tailwind CSS | 15.38 kB |     37.05 kB |        +21.67 kB |
+| Estimated initial transfer    | 67.97 kB |     70.89 kB |         +2.92 kB |
+
+This trade-off is intentional and transparent: component-scoped CSS is substantially smaller, while
+literal Tailwind utilities increase generated global CSS and template bytes. The result meets the
+requested Tailwind-first ownership model and remains well below the component-style budget; it is not a
+net bundle-size optimization.
+
+## 15. Final verification
+
+- Production build: passed.
+- Unit tests: 51 passed across 3 test files.
+- Strict application and specification TypeScript checks: passed.
+- `git diff --check`: passed.
+- `src/styles.css`, `package.json`, and `package-lock.json`: SHA-256 values unchanged from the frozen
+  baseline.
+- No dependency was installed or removed.
 
 The implementation preserved the exact 760 px inclusive component breakpoint rather than replacing it
 with Tailwind's strict-below arbitrary max-width variant. Global stylesheet, package manifest, and lockfile
 hashes remained unchanged. All 51 tests, strict TypeScript compilation, and the production build passed.
 The global CSS increase is the explicit cost of moving exact, previously component-scoped values to
-literal Tailwind utilities. The remaining component CSS owns compound interaction states, responsive
-grid changes, sticky-table relationships, nested hover/focus scrollbars, history highlighting, focus
-expansion, and animation behavior. Moving those rules would reduce clarity or increase regression risk
-and is therefore outside the safe optimization boundary.
+literal Tailwind utilities. The remaining component CSS owns host styling, responsive grid changes,
+sticky-table relationships, nested hover/focus scrollbars, history-table geometry, ARIA-sort
+relationships, and exact inclusive breakpoints. Moving those rules would reduce clarity or increase
+regression risk and is therefore outside the safe optimization boundary.

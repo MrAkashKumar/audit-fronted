@@ -1,5 +1,5 @@
 <main
-  class="audit-view-page mx-auto w-[min(calc(100%_-_2rem),_1800px)] pt-6 pb-10"
+  class="audit-view-page mx-auto w-[min(calc(100%_-_2rem),_1800px)] pt-6 pb-10 [&_button]:cursor-pointer [&_button]:outline-none [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-[#f2c54f]"
 >
   <section
     class="table-picker relative z-[4]"
@@ -113,7 +113,7 @@
                 <button
                   [id]="'audit-view-table-option-' + optionIndex"
                   type="button"
-                  class="table-option flex w-full items-center gap-[0.9rem] rounded-[0.7rem] border-y-0 border-r-0 border-l-[3px] border-l-transparent bg-transparent px-[0.85rem] py-[0.7rem] text-left text-[#ede9e2]"
+                  class="table-option flex w-full items-center gap-[0.9rem] rounded-[0.7rem] border-y-0 border-r-0 border-l-[3px] border-l-transparent bg-transparent px-[0.85rem] py-[0.7rem] text-left text-[#ede9e2] hover:bg-[#34312c] [&.table-option--active]:bg-[#34312c] [&.table-option--selected]:border-l-[#f07b3d] [&.table-option--selected]:bg-[#494b2c]"
                   role="option"
                   tabindex="-1"
                   [attr.aria-selected]="selectedTableLabel === tableLabel"
@@ -272,7 +272,7 @@
 
         <button
           type="button"
-          class="filter-button inline-flex min-h-[3.15rem] items-center gap-[0.55rem] rounded-full border border-[#8d877d] bg-transparent px-[1.35rem] font-[750] text-[#d5da00]"
+          class="filter-button inline-flex min-h-[3.15rem] items-center gap-[0.55rem] rounded-full border border-[#8d877d] bg-transparent px-[1.35rem] font-[750] text-[#d5da00] disabled:cursor-not-allowed disabled:opacity-[0.48] [&.filter-button--active]:border-[#f3c557] [&.filter-button--active]:bg-[#f3c557] [&.filter-button--active]:text-[#2c2518] [&.filter-button--active]:shadow-[0_0.35rem_1rem_rgb(243_197_87_/_18%)] [&.filter-button--active:active]:[transform:translateY(1px)] [&:not(.filter-button--active):not(:disabled):hover]:border-[#d5da00] [&:not(.filter-button--active):not(:disabled):hover]:bg-[rgb(213_218_0_/_7%)]"
           [disabled]="isRecordsLoading || !recordsResponse"
           [class.filter-button--active]="
             isRecordFilterOpen || activeFilterCount > 0
@@ -373,7 +373,7 @@
                       <button
                         type="button"
                         data-join="AND"
-                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6]"
+                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6] hover:bg-[#2d281f] hover:text-[#f5d574] [&.condition-join-option--active]:bg-[#f3c557] [&.condition-join-option--active]:text-[#21190d] [&.condition-join-option--active]:shadow-[0_0.2rem_0.75rem_rgb(242_197_79_/_28%),_inset_0_0_0_1px_rgb(255_241_178_/_34%)]"
                         [class.condition-join-option--active]="
                           condition.join === 'AND'
                         "
@@ -385,7 +385,7 @@
                       <button
                         type="button"
                         data-join="OR"
-                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6]"
+                        class="min-h-[2.15rem] rounded-full border-0 bg-transparent px-[0.45rem] text-[0.67rem] font-[850] tracking-[0.045em] text-[#b8b1a6] hover:bg-[#2d281f] hover:text-[#f5d574] [&.condition-join-option--active]:bg-[#f3c557] [&.condition-join-option--active]:text-[#21190d] [&.condition-join-option--active]:shadow-[0_0.2rem_0.75rem_rgb(242_197_79_/_28%),_inset_0_0_0_1px_rgb(255_241_178_/_34%)]"
                         [class.condition-join-option--active]="
                           condition.join === 'OR'
                         "
@@ -399,7 +399,7 @@
                 </div>
 
                 <div
-                  class="filter-control filter-select filter-field relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:field]"
+                  class="filter-control filter-select filter-field relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] focus-within:border-[#f3c557] focus-within:bg-[#2c2823] focus-within:shadow-[0_0_0_2px_rgb(243_197_87_/_14%)] [&.filter-select--open]:z-[8] [&.filter-select--open]:border-[#f3c557] [&.filter-select--open]:shadow-[0_0_0_2px_rgb(243_197_87_/_16%)] [&.filter-select--open>.control-label]:text-[#f3c557] [grid-area:field]"
                   [class.filter-select--open]="
                     isFilterFieldMenuOpen(condition.id)
                   "
@@ -413,7 +413,7 @@
                     #fieldTrigger
                     [id]="'filter-field-trigger-' + condition.id"
                     type="button"
-                    class="select-trigger field-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0"
+                    class="select-trigger field-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0 [&.select-trigger--placeholder]:text-[#958f87]"
                     role="combobox"
                     aria-haspopup="listbox"
                     [class.select-trigger--placeholder]="!condition.fieldKey"
@@ -434,7 +434,7 @@
                   >
                     <span>{{ getFilterFieldLabel(condition.fieldKey) }}</span>
                     <span
-                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae]"
+                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae] [&.select-caret--open]:rotate-180 [&.select-caret--open]:border-t-[#d5da00]"
                       [class.select-caret--open]="
                         isFilterFieldMenuOpen(condition.id)
                       "
@@ -461,7 +461,7 @@
                             'filter-field-' + condition.id + '-' + fieldIndex
                           "
                           type="button"
-                          class="select-option field-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8]"
+                          class="select-option field-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8] hover:bg-[#302f25] [&.select-option--active]:bg-[#302f25] [&.select-option--selected]:bg-[#4a4c2c] [&.select-option--selected]:text-[#f3efdc] [&.select-option--selected.select-option--active]:bg-[#555832] [&.select-option--selected:hover]:bg-[#555832]"
                           role="option"
                           tabindex="-1"
                           [attr.data-field]="field.key"
@@ -498,7 +498,7 @@
                 </div>
 
                 <div
-                  class="filter-control filter-select filter-operator relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:operator]"
+                  class="filter-control filter-select filter-operator relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] focus-within:border-[#f3c557] focus-within:bg-[#2c2823] focus-within:shadow-[0_0_0_2px_rgb(243_197_87_/_14%)] [&.filter-select--open]:z-[8] [&.filter-select--open]:border-[#f3c557] [&.filter-select--open]:shadow-[0_0_0_2px_rgb(243_197_87_/_16%)] [&.filter-select--open>.control-label]:text-[#f3c557] [grid-area:operator]"
                   [class.filter-select--open]="
                     isFilterOperatorMenuOpen(condition.id)
                   "
@@ -511,7 +511,7 @@
                   <button
                     #operatorTrigger
                     type="button"
-                    class="select-trigger operator-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0"
+                    class="select-trigger operator-trigger flex min-h-[var(--audit-control-height)] w-full items-center justify-between gap-[0.75rem] border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-left text-[#ded9d1] outline-0 [&.select-trigger--placeholder]:text-[#958f87]"
                     role="combobox"
                     aria-haspopup="listbox"
                     [attr.aria-label]="
@@ -539,7 +539,7 @@
                       getFilterOperatorLabel(condition.operator)
                     }}</span>
                     <span
-                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae]"
+                      class="select-caret size-0 shrink-0 border-x-[0.36rem] border-t-[0.42rem] border-b-0 border-x-transparent border-t-[#bdb7ae] [&.select-caret--open]:rotate-180 [&.select-caret--open]:border-t-[#d5da00]"
                       [class.select-caret--open]="
                         isFilterOperatorMenuOpen(condition.id)
                       "
@@ -569,7 +569,7 @@
                             operatorIndex
                           "
                           type="button"
-                          class="select-option operator-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8]"
+                          class="select-option operator-option flex min-h-[2.65rem] w-full items-center justify-between gap-4 rounded-[0.4rem] border-0 bg-transparent px-[0.8rem] py-[0.62rem] text-left text-[#e4e0d8] hover:bg-[#302f25] [&.select-option--active]:bg-[#302f25] [&.select-option--selected]:bg-[#4a4c2c] [&.select-option--selected]:text-[#f3efdc] [&.select-option--selected.select-option--active]:bg-[#555832] [&.select-option--selected:hover]:bg-[#555832]"
                           role="option"
                           tabindex="-1"
                           [attr.data-operator]="operator.value"
@@ -608,7 +608,7 @@
                 @if (hasFilterValueInput(condition)) {
                   @if (isBooleanFilter(condition)) {
                     <label
-                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:value]"
+                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] focus-within:border-[#f3c557] focus-within:bg-[#2c2823] focus-within:shadow-[0_0_0_2px_rgb(243_197_87_/_14%)] [&:focus-within>.control-label]:text-[#f3c557] [grid-area:value]"
                     >
                       <span
                         class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
@@ -626,14 +626,14 @@
                     </label>
                   } @else {
                     <label
-                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] [grid-area:value]"
+                      class="filter-control filter-value relative block min-h-[var(--audit-control-height)] min-w-0 rounded-[0.55rem] border border-[#615744] bg-[#292622] focus-within:border-[#f3c557] focus-within:bg-[#2c2823] focus-within:shadow-[0_0_0_2px_rgb(243_197_87_/_14%)] [&:focus-within>.control-label]:text-[#f3c557] [grid-area:value]"
                     >
                       <span
                         class="control-label pointer-events-none absolute top-[-0.62rem] left-[0.72rem] z-[2] bg-[#24211e] px-[0.32rem] text-[0.72rem] leading-[1.2] font-semibold text-[#9b958c]"
                         >Value</span
                       >
                       <input
-                        class="min-h-[var(--audit-control-height)] w-full border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-[#ded9d1] outline-0"
+                        class="min-h-[var(--audit-control-height)] w-full border-0 bg-transparent px-[0.9rem] pt-[0.85rem] pb-[0.7rem] text-[#ded9d1] caret-[#f3c557] outline-0 placeholder:text-[#958f87] placeholder:opacity-100"
                         [type]="getFilterInputType(condition)"
                         [value]="condition.value"
                         placeholder="Enter text, number, or date"
@@ -682,7 +682,7 @@
           aria-live="polite"
         >
           <span
-            class="loading-ring size-[1.8rem] rounded-full border-[3px] border-[#474139] border-t-[#edbb43]"
+            class="loading-ring size-[1.8rem] animate-spin rounded-full border-[3px] border-[#474139] border-t-[#edbb43] [animation-duration:0.8s] motion-reduce:animate-none"
             aria-hidden="true"
           ></span>
           <strong>Loading audit records…</strong>
@@ -729,7 +729,7 @@
           (wheel)="onTableWheel($event)"
         >
           <table
-            class="records-table data-table w-max min-w-full border-collapse text-left"
+            class="records-table data-table w-max min-w-full border-collapse text-left [&_.cell-value]:inline-block [&_.cell-value]:max-w-[22rem] [&_.cell-value]:overflow-hidden [&_.cell-value]:text-ellipsis [&_.cell-value]:align-middle [&_.cell-value--expandable]:cursor-zoom-in [&_.cell-value--expandable]:rounded-[0.25rem] [&_.cell-value--expandable:focus]:max-w-[min(42rem,_calc(100vw_-_5rem))] [&_.cell-value--expandable:focus]:overflow-visible [&_.cell-value--expandable:focus]:text-clip [&_.cell-value--expandable:focus]:whitespace-normal [&_.cell-value--expandable:focus]:[overflow-wrap:anywhere] [&_.cell-value--expandable:focus-visible]:outline-2 [&_.cell-value--expandable:focus-visible]:outline-offset-[0.2rem] [&_.cell-value--expandable:focus-visible]:outline-[#f2c54f] [&_.code-value]:inline-block [&_.code-value]:rounded-[0.4rem] [&_.code-value]:bg-[#312a20] [&_.code-value]:px-[0.55rem] [&_.code-value]:py-[0.35rem] [&_.code-value]:[font-family:ui-monospace,_SFMono-Regular,_Menlo,_monospace] [&_.code-value]:text-[0.76rem] [&_.code-value]:font-extrabold [&_.code-value]:text-[#e6ba4d] [&_.status-value]:inline-block [&_.status-value]:rounded-[0.45rem] [&_.status-value]:bg-[#173653] [&_.status-value]:px-[0.55rem] [&_.status-value]:py-[0.35rem] [&_.status-value]:text-[0.72rem] [&_.status-value]:font-[850] [&_.status-value]:text-[#8bc1ff] [&_.empty-value]:text-[#aaa39a]"
           >
             <thead>
               <tr>
@@ -861,7 +861,7 @@
                         (click)="$event.stopPropagation(); toggleRow(row.id)"
                       >
                         <svg
-                          class="size-4 [transition:transform_140ms_ease] motion-reduce:[transition:none]"
+                          class="size-4 [transition:rotate_140ms_ease] [&.chevron--open]:rotate-180 motion-reduce:[transition:none]"
                           viewBox="0 0 20 20"
                           fill="none"
                           stroke="currentColor"
@@ -958,7 +958,7 @@
                   }
                   <td>
                     <span
-                      class="revision-count grid size-[2.2rem] place-items-center rounded-[0.55rem] bg-[#f2c34f] font-black text-[#2c2416] shadow-[0_0.25rem_0.8rem_rgb(242_195_79_/_18%)]"
+                      class="revision-count grid size-[2.2rem] place-items-center rounded-[0.55rem] bg-[#f2c34f] font-black text-[#2c2416] shadow-[0_0.25rem_0.8rem_rgb(242_195_79_/_18%)] [&.revision-count--muted]:bg-[#302d28] [&.revision-count--muted]:text-[#a9a39a] [&.revision-count--muted]:shadow-none"
                       [class.revision-count--muted]="row.revisionCount <= 1"
                     >
                       {{ row.revisionCount }}
@@ -966,7 +966,7 @@
                   </td>
                   <td>
                     <span
-                      class="record-state inline-flex items-center gap-[0.45rem] rounded-full bg-[#143d31] px-[0.75rem] py-[0.48rem] text-[0.75rem] font-[850] text-[#64dda5]"
+                      class="record-state inline-flex items-center gap-[0.45rem] rounded-full bg-[#143d31] px-[0.75rem] py-[0.48rem] text-[0.75rem] font-[850] text-[#64dda5] [&.record-state--audit]:bg-[#552323] [&.record-state--audit]:text-[#ff9c9c]"
                       [class.record-state--audit]="
                         row.recordState === 'Audit only'
                       "
@@ -1119,13 +1119,14 @@
                                 @let operationTone =
                                   getOperationTone(history.operation);
                                 <tr
+                                  class="[&.history-record-row--delete>td]:bg-[rgb(84_35_35_/_22%)] [&.history-record-row--delete>td:first-child]:shadow-[inset_3px_0_#ff7f7f]"
                                   [class.history-record-row--delete]="
                                     operationTone === 'delete'
                                   "
                                 >
                                   <td>
                                     <span
-                                      class="operation-badge inline-flex min-w-[4.5rem] items-center justify-center rounded-full bg-[#35312c] px-[0.55rem] py-[0.35rem] text-center text-[0.72rem] font-black text-[#c6c0b7]"
+                                      class="operation-badge inline-flex min-w-[4.5rem] items-center justify-center rounded-full bg-[#35312c] px-[0.55rem] py-[0.35rem] text-center text-[0.72rem] font-black text-[#c6c0b7] [&.operation-badge--delete]:bg-[#542323] [&.operation-badge--delete]:text-[#ff9b9b] [&.operation-badge--insert]:bg-[#133c30] [&.operation-badge--insert]:text-[#60dda5] [&.operation-badge--unknown]:border [&.operation-badge--unknown]:border-[#5f5950] [&.operation-badge--update]:bg-[#183652] [&.operation-badge--update]:text-[#8bc1ff]"
                                       [class.operation-badge--insert]="
                                         operationTone === 'insert'
                                       "
@@ -1175,7 +1176,7 @@
                                       );
                                     <td>
                                       <span
-                                        class="cell-value history-cell-value"
+                                        class="cell-value history-cell-value [&.history-cell-value--changed]:border-l-2 [&.history-cell-value--changed]:border-l-[#f28b49] [&.history-cell-value--changed]:bg-[rgb(242_139_73_/_10%)] [&.null-value]:text-[#9d968d]! [&.null-value]:italic"
                                         [class.history-cell-value--changed]="
                                           historyChange !== null
                                         "
